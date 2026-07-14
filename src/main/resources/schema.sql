@@ -131,3 +131,11 @@ CREATE TABLE IF NOT EXISTS daily_demand (
 -- Convert daily_demand to a TimescaleDB hypertable
 -- Hypertable removed for AWS RDS compatibility. An index on 'date' can be used instead.
 CREATE INDEX IF NOT EXISTS daily_demand_date_idx ON daily_demand (date);
+
+-- Media upload pipeline column additions
+ALTER TABLE users  ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
+ALTER TABLE users  ADD COLUMN IF NOT EXISTS vehicle_doc_url   TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo_url          TEXT;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS banner_url        TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS proof_of_delivery_url TEXT;
+

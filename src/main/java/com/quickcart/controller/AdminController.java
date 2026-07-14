@@ -40,16 +40,12 @@ public class AdminController {
     }
 
     @PutMapping("/stores/{id}/verify")
-    public ResponseEntity<?> verifyStore(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> verifyStore(@PathVariable Long id, @RequestBody @jakarta.validation.Valid com.quickcart.dto.request.StoreVerificationRequest request) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        String status = body.get("status");
-        if (status == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "status parameter is required"));
-        }
-        
-        store.setVerificationStatus(status);
+        String statusStr = request.getStatus().name();
+        store.setVerificationStatus(statusStr);
         storeRepository.save(store);
 
         // Record to Audit Logs
@@ -61,7 +57,7 @@ public class AdminController {
                 log.setAdmin(admin);
                 log.setAction("VERIFY_STORE");
                 log.setTargetStoreId(id);
-                log.setMetadata("{\"status\":\"" + status + "\"}");
+                log.setMetadata("{\"status\":\"" + statusStr + "\"}");
                 log.setIpAddress("127.0.0.1"); // simple fallback IP
                 auditLogRepository.save(log);
             }

@@ -33,3 +33,17 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+aws:
+  s3:
+    bucket: ${S3_BUCKET_NAME:quickcart-media}
+    region: ${AWS_REGION:ap-south-1}
+
+ai:
+  groq:
+    api-key: ${GROQ_API_KEY:}
+  nvidia:
+    api-key: ${NVIDIA_API_KEY:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+

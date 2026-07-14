@@ -39,4 +39,10 @@ public class User {
 
     @Column(name = "fcm_token")
     private String fcmToken;
+
+    @Column(name = "profile_photo_url")
+    private String profilePhotoUrl;
+
+    @Column(name = "vehicle_doc_url")
+    private String vehicleDocUrl;
 }

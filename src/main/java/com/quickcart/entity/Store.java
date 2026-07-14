@@ -40,4 +40,10 @@ public class Store {
 
     @Column(name = "is_open")
     private Boolean isOpen = true;
+
+    @Column(name = "logo_url")
+    private String logoUrl;
+
+    @Column(name = "banner_url")
+    private String bannerUrl;
 }

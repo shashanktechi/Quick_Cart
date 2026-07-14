@@ -3,6 +3,7 @@ package com.quickcart.dto.request;
 import lombok.Data;
 
 @Data
+@ValidAuthRequest
 public class AuthRequest {
     private String phone;
     private String email;

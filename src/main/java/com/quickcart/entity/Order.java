@@ -50,4 +50,7 @@ public class Order {
 
     @Column(name = "estimated_delivery_time")
     private Integer estimatedDeliveryTime;
+
+    @Column(name = "proof_of_delivery_url")
+    private String proofOfDeliveryUrl;
 }

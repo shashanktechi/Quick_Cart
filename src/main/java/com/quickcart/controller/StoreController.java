@@ -25,6 +25,12 @@ public class StoreController {
     private OrderRepository orderRepository;
 
     @Autowired
+    private com.quickcart.service.VisionService visionService;
+
+    @Autowired
+    private com.quickcart.service.WeatherAnalyticsService weatherAnalyticsService;
+
+    @Autowired
     private NotificationService notificationService;
 
     @Autowired
@@ -39,10 +45,10 @@ public class StoreController {
     }
     
     @PutMapping("/orders/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody @jakarta.validation.Valid com.quickcart.dto.request.OrderStatusUpdateRequest request) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-        String newStatus = body.get("status");
+        String newStatus = request.getStatus().name();
         order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
 
@@ -70,12 +76,8 @@ public class StoreController {
     }
 
     @PutMapping("/inventory/{id}")
-    public ResponseEntity<?> updateInventoryQuantity(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        Integer quantity = body.get("quantity");
-        if (quantity == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Quantity parameter is required"));
-        }
-        Inventory inventory = inventoryService.updateQuantity(id, quantity);
+    public ResponseEntity<?> updateInventoryQuantity(@PathVariable Long id, @RequestBody @jakarta.validation.Valid com.quickcart.dto.request.InventoryQuantityUpdateRequest request) {
+        Inventory inventory = inventoryService.updateQuantity(id, request.getQuantity());
         return ResponseEntity.ok(inventory);
     }
 
@@ -87,5 +89,38 @@ public class StoreController {
         }
         List<Inventory> inventoryList = inventoryService.getInventoryByStore(storeId);
         return ResponseEntity.ok(inventoryList);
+    }
+
+    @PostMapping("/inventory/analyze-shelf")
+    public ResponseEntity<?> analyzeShelfPhoto(@RequestBody Map<String, String> body) {
+        String objectKey = body.get("objectKey");
+        if (objectKey == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "objectKey is required"));
+        }
+        return ResponseEntity.ok(visionService.analyzeShelfPhoto(objectKey));
+    }
+
+    @GetMapping("/weather-forecast")
+    public ResponseEntity<?> getStoreWeatherForecast() {
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        if (storeId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        return ResponseEntity.ok(weatherAnalyticsService.getForecastForStore(storeId));
+    }
+
+    @GetMapping("/products/{productId}/demand-adjustment")
+    public ResponseEntity<?> getDemandAdjustment(@PathVariable Long productId) {
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        if (storeId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        com.quickcart.dto.response.WeatherSnapshot weather = weatherAnalyticsService.getForecastForStore(storeId);
+        double adjustment = weatherAnalyticsService.adjustDemandForWeather(productId, weather);
+        return ResponseEntity.ok(Map.of(
+                "productId", productId,
+                "weather", weather,
+                "demandMultiplier", adjustment
+        ));
     }
 }

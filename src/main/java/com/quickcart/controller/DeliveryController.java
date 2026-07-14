@@ -49,15 +49,12 @@ public class DeliveryController {
     }
 
     @PatchMapping("/status")
-    public ResponseEntity<?> updateOrderStatus(@RequestBody Map<String, Object> body) {
-        Object orderIdObj = body.get("orderId");
-        String status = (String) body.get("status");
-        
-        if (orderIdObj == null || status == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "orderId and status are required"));
+    public ResponseEntity<?> updateOrderStatus(@RequestBody @jakarta.validation.Valid com.quickcart.dto.request.OrderStatusUpdateRequest request) {
+        Long orderId = request.getOrderId();
+        if (orderId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "orderId is required"));
         }
         
-        Long orderId = Long.valueOf(orderIdObj.toString());
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
                 
@@ -67,7 +64,8 @@ public class DeliveryController {
             return ResponseEntity.status(403).body(Map.of("error", "Access denied: You are not assigned to this order"));
         }
         
-        order.setStatus(status);
+        String statusStr = request.getStatus().name();
+        order.setStatus(statusStr);
         Order savedOrder = orderRepository.save(order);
         
         if (savedOrder.getCustomer() != null) {
@@ -77,7 +75,7 @@ public class DeliveryController {
         return ResponseEntity.ok(Map.of(
             "updated", true,
             "orderId", orderId,
-            "newStatus", status
+            "newStatus", statusStr
         ));
     }
 }
