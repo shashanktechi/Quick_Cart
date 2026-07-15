@@ -17,7 +17,16 @@ const Navbar = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    const role = localStorage.getItem('quickcart_role');
+    let redirectTo = '/login/customer'; // default
+    if (role === 'STORE_ADMIN') {
+      redirectTo = '/login/seller';
+    } else if (role === 'DELIVERY_PARTNER') {
+      redirectTo = '/login/delivery';
+    } else if (role === 'SYSTEM_ADMIN') {
+      redirectTo = '/login/admin';
+    }
+    navigate(replace, redirectTo);
   };
 
   const getRoleLabel = () => {

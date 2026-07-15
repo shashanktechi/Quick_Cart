@@ -16,8 +16,8 @@ public class EmailService {
         message.setFrom("shashankdany8712@gmail.com");
         message.setTo(toEmail);
         message.setSubject("Your QuickCart OTP Code");
-        message.setText("Your OTP code for QuickCart login is: " + otp + "\n\nThis code will expire in 5 minutes.");
-        
+        message.setText("Your OTP code for QuickCart login is: " + otp + "\n\nThis code will expire in 10 minutes.");
+
         mailSender.send(message);
     }
 }

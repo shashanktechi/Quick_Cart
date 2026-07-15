@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,13 +28,31 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
-        
+
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = (error instanceof FieldError) ? ((FieldError) error).getField() : error.getObjectName();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
+        body.put("errors", errors);
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Object> handleConstraintViolationExceptions(ConstraintViolationException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+
+        Map<String, String> errors = new HashMap<>();
+        Set<ConstraintViolation<?>> violations = ex.getConstraintViolations();
+        for (ConstraintViolation<?> violation : violations) {
+            String fieldName = violation.getPropertyPath().toString();
+            String errorMessage = violation.getMessage();
+            errors.put(fieldName, errorMessage);
+        }
         body.put("errors", errors);
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
@@ -55,7 +77,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex) {
         logger.error("Unexpected error occurred: ", ex);
-        
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());

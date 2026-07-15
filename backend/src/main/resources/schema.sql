@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(50) NOT NULL, -- CUSTOMER, STORE_ADMIN, DELIVERY_PARTNER, SYSTEM_ADMIN
     trust_score INT DEFAULT 50,
     is_active BOOLEAN DEFAULT TRUE,
-    fcm_token VARCHAR(255)
+    fcm_token VARCHAR(255),
+    verification_status VARCHAR(50) DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    phone_verified BOOLEAN DEFAULT FALSE -- whether the phone number has been verified via OTP
 );
 
 -- Stores Table
@@ -117,6 +119,21 @@ CREATE TABLE IF NOT EXISTS daily_demand (
     quantity_sold INT DEFAULT 0,
     revenue DECIMAL(10,2) DEFAULT 0.0
 );
+
+-- OPT Requests Table
+CREATE TABLE IF NOT EXISTS otp_requests (
+    id BIGSERIAL PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    attempt_count INT DEFAULT 0,
+    verified BOOLEAN DEFAULT FALSE
+);
+
+CREATE INDEX IF NOT EXISTS idx_otp_requests_phone ON otp_requests(phone);
+CREATE INDEX IF NOT EXISTS idx_otp_requests_expires_at ON otp_requests(expires_at);
+CREATE INDEX IF NOT EXISTS idx_otp_requests_created_at ON otp_requests(created_at);
 
 CREATE INDEX IF NOT EXISTS daily_demand_date_idx ON daily_demand (sale_date);
 

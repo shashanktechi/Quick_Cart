@@ -6,16 +6,21 @@ import com.quickcart.dto.request.StoreProductRequest;
 import com.quickcart.dto.request.InventoryQuantityUpdateRequest;
 import com.quickcart.entity.Order;
 import com.quickcart.entity.Inventory;
+import com.quickcart.entity.Store;
 import com.quickcart.repository.OrderRepository;
 import com.quickcart.service.InventoryService;
 import com.quickcart.service.NotificationService;
+import com.quickcart.service.VisionService;
+import com.quickcart.service.WeatherAnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/store")
@@ -27,10 +32,10 @@ public class StoreController {
     private OrderRepository orderRepository;
 
     @Autowired
-    private com.quickcart.service.VisionService visionService;
+    private VisionService visionService;
 
     @Autowired
-    private com.quickcart.service.WeatherAnalyticsService weatherAnalyticsService;
+    private WeatherAnalyticsService weatherAnalyticsService;
 
     @Autowired
     private NotificationService notificationService;
@@ -46,6 +51,23 @@ public class StoreController {
 
     @Autowired
     private com.quickcart.repository.UserRepository userRepository;
+
+    /**
+     * Returns the store for the current user, throwing an exception if not found or not approved.
+     * Used for mutating endpoints that require an approved store.
+     */
+    private Store getCurrentStoreForMutatingOperations() {
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        if (storeId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No associated store found for this admin");
+        }
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not found"));
+        if (!"APPROVED".equals(store.getVerificationStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Store is not approved. Please wait for admin approval.");
+        }
+        return store;
+    }
 
     @GetMapping("/profile")
     public ResponseEntity<?> getStoreProfile() {
@@ -92,6 +114,9 @@ public class StoreController {
 
     @PutMapping("/orders/{id}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody @jakarta.validation.Valid OrderStatusUpdateRequest request) {
+        // Check store approval for mutating operation
+        getCurrentStoreForMutatingOperations();
+
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         Long currentStoreId = currentUserProvider.getCurrentStoreId();
@@ -111,10 +136,10 @@ public class StoreController {
 
     @PostMapping("/products")
     public ResponseEntity<?> addProductToStore(@RequestBody StoreProductRequest request) {
-        Long storeId = currentUserProvider.getCurrentStoreId();
-        if (storeId == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized: No associated store found for this admin"));
-        }
+        // Check store approval for mutating operation
+        Store store = getCurrentStoreForMutatingOperations();
+        Long storeId = store.getId();
+
         Inventory inventory = inventoryService.addProductToStore(
                 storeId,
                 request.getProduct(),
@@ -127,10 +152,10 @@ public class StoreController {
 
     @PutMapping("/inventory/{id}")
     public ResponseEntity<?> updateInventoryQuantity(@PathVariable Long id, @RequestBody @jakarta.validation.Valid InventoryQuantityUpdateRequest request) {
-        Long storeId = currentUserProvider.getCurrentStoreId();
-        if (storeId == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
-        }
+        // Check store approval for mutating operation
+        Store store = getCurrentStoreForMutatingOperations();
+        Long storeId = store.getId();
+
         Inventory inventory = inventoryService.updateQuantity(storeId, id, request.getQuantity());
         return ResponseEntity.ok(inventory);
     }

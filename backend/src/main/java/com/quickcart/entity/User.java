@@ -45,4 +45,10 @@ public class User {
 
     @Column(name = "vehicle_doc_url")
     private String vehicleDocUrl;
+
+    @Column(name = "verification_status")
+    private String verificationStatus = "PENDING";
+
+    @Column(name = "phone_verified")
+    private Boolean phoneVerified = false;
 }

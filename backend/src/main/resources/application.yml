@@ -2,9 +2,9 @@ spring:
   application:
     name: quickcart-backend
   datasource:
-    url: jdbc:postgresql://${DB_HOST:database-1.cu3ikoym0hs3.us-east-1.rds.amazonaws.com}:${DB_PORT:5432}/${DB_NAME:postgres}
-    username: ${DB_USER:admin123}
-    password: ${DB_PASSWORD:Sunny2005}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   # We use ddl-auto: none and rely on schema.sql for schema initialization
   jpa:
@@ -22,8 +22,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: shashankdany8712@gmail.com
-    password: mhuk lhqx oqza uxwu
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -32,7 +32,7 @@ spring:
             enable: true
 
 jwt:
-  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  secret: ${JWT_SECRET}
   expirationMs: 86400000 # 24 hours
 
 server:
@@ -46,13 +46,13 @@ springdoc:
 
 aws:
   s3:
-    bucket: ${S3_BUCKET_NAME:quickcart-media}
-    region: ${AWS_REGION:ap-south-1}
+    bucket: ${S3_BUCKET_NAME}
+    region: ${AWS_REGION}
 
 ai:
   groq:
-    api-key: ${GROQ_API_KEY:}
+    api-key: ${GROQ_API_KEY}
   nvidia:
-    api-key: ${NVIDIA_API_KEY:}
+    api-key: ${NVIDIA_API_KEY}
   gemini:
-    api-key: ${GEMINI_API_KEY:}
+    api-key: ${GEMINI_API_KEY}

@@ -7,8 +7,13 @@ import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from './ProtectedRoute';
 
 // Auth pages
-import Login from '../pages/auth/Login';
-import Register from '../pages/auth/Register';
+import LoginCustomer from '../pages/auth/LoginCustomer';
+import RegisterCustomer from '../pages/auth/RegisterCustomer';
+import LoginSeller from '../pages/auth/LoginSeller';
+import RegisterSeller from '../pages/auth/RegisterSeller';
+import LoginDelivery from '../pages/auth/LoginDelivery';
+import RegisterDelivery from '../pages/auth/RegisterDelivery';
+import LoginAdmin from '../pages/auth/LoginAdmin';
 
 // Customer pages
 import Home from '../pages/customer/Home';
@@ -37,13 +42,17 @@ import Users from '../pages/admin/Users';
 
 const RoleRedirect = () => {
   const { role, isAuthenticated } = useSelector((state) => state.auth);
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    // Redirect to appropriate login page based on last attempted role or default to customer
+    // For now, defaulting to customer login
+    return <Navigate to="/login/customer" replace />;
+  }
   switch (role) {
     case 'CUSTOMER': return <Navigate to="/" replace />;
     case 'STORE_ADMIN': return <Navigate to="/shopkeeper/dashboard" replace />;
     case 'DELIVERY_PARTNER': return <Navigate to="/delivery/dashboard" replace />;
     case 'SYSTEM_ADMIN': return <Navigate to="/admin/dashboard" replace />;
-    default: return <Navigate to="/login" replace />;
+    default: return <Navigate to="/login/customer" replace />;
   }
 };
 
@@ -52,8 +61,16 @@ const AppRoutes = () => (
     <Routes>
       {/* Auth routes */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login/customer" element={<LoginCustomer />} />
+        <Route path="/register/customer" element={<RegisterCustomer />} />
+        <Route path="/login/seller" element={<LoginSeller />} />
+        <Route path="/register/seller" element={<RegisterSeller />} />
+        <Route path="/login/delivery" element={<LoginDelivery />} />
+        <Route path="/register/delivery" element={<RegisterDelivery />} />
+        <Route path="/login/admin" element={<LoginAdmin />} />
+        {/* Keep the old routes for backward compatibility during transition (optional)
+        <Route path="/login" element={<Navigate to="/login/customer" replace />} />
+        <Route path="/register" element={<Navigate to="/register/customer" replace />} />
       </Route>
 
       {/* Customer routes */}
