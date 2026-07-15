@@ -18,7 +18,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/otp/send")
-    public ResponseEntity<?> sendOtp(@RequestBody @jakarta.validation.Valid AuthRequest request) {
+    public ResponseEntity<?> sendOtp(@RequestBody AuthRequest request) {
         authService.sendOtp(request.getPhone());
         return ResponseEntity.ok(Map.of("message", "OTP sent to WhatsApp"));
     }

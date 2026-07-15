@@ -43,7 +43,7 @@ public class AdminController {
     @PutMapping("/stores/{id}/verify")
     public ResponseEntity<?> verifyStore(@PathVariable Long id,
                                          @RequestBody @jakarta.validation.Valid StoreVerificationRequest request,
-                                         HttpServletRequest request) {
+                                         HttpServletRequest servletRequest) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
@@ -61,9 +61,9 @@ public class AdminController {
                 log.setAction("VERIFY_STORE");
                 log.setTargetStoreId(id);
                 log.setMetadata("{\"status\":\"" + statusStr + "\"}");
-                String ipAddress = request.getHeader("X-FORWARDED-FOR");
+                String ipAddress = servletRequest.getHeader("X-FORWARDED-FOR");
                 if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
-                    ipAddress = request.getRemoteAddr();
+                    ipAddress = servletRequest.getRemoteAddr();
                 }
                 log.setIpAddress(ipAddress);
                 auditLogRepository.save(log);

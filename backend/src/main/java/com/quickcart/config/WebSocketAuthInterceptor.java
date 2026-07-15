@@ -2,7 +2,7 @@ package com.quickcart.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.channel.ChannelInterceptor;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -53,7 +53,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         // Handle SUBSCRIBE: validate destination against authenticated user
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
-            Authentication auth = accessor.getUser();
+            Authentication auth = (Authentication) accessor.getUser();
             if (auth == null || !auth.isAuthenticated()) {
                 return null; // Reject subscription: not authenticated
             }

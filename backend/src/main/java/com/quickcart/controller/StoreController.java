@@ -2,6 +2,7 @@ package com.quickcart.controller;
 
 import com.quickcart.config.CurrentUserProvider;
 import com.quickcart.dto.request.OrderStatusUpdateRequest;
+import com.quickcart.dto.request.StoreProductRequest;
 import com.quickcart.dto.request.InventoryQuantityUpdateRequest;
 import com.quickcart.entity.Order;
 import com.quickcart.entity.Inventory;
@@ -66,7 +67,7 @@ public class StoreController {
             notificationService.notifyCustomer(savedOrder.getCustomer().getId(), savedOrder);
         }
 
-        return ResponseEntity.ok(Map.of("success": true, "newStatus": newStatus));
+        return ResponseEntity.ok(Map.of("success", true, "newStatus", newStatus));
     }
 
     @PostMapping("/products")

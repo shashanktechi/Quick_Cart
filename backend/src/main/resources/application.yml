@@ -4,12 +4,12 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:database-1.cu3ikoym0hs3.us-east-1.rds.amazonaws.com}:${DB_PORT:5432}/${DB_NAME:studentdb}
     username: ${DB_USER:admin123}
-    password: ${DB_PASSWORD:sunny2005}
+    password: ${DB_PASSWORD:Sunny2005}
     driver-class-name: org.postgresql.Driver
-  # We use ddl-auto: update based on deployment settings.
+  # We use ddl-auto: none and rely on schema.sql for schema initialization
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -17,8 +17,7 @@ spring:
         format_sql: true
   sql:
     init:
-      mode: never
-
+      mode: always
 
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
@@ -45,4 +44,3 @@ ai:
     api-key: ${NVIDIA_API_KEY:}
   gemini:
     api-key: ${GEMINI_API_KEY:}
-
