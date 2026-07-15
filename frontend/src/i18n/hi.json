@@ -1,0 +1,73 @@
+{
+  "common": {
+    "appName": "क्विककार्ट",
+    "searchPlaceholder": "उत्पाद या स्टोर खोजें...",
+    "loading": "लोड हो रहा है...",
+    "freshness": "ताजगी",
+    "noData": "कोई डेटा नहीं मिला",
+    "distance": "दूरी",
+    "price": "कीमत",
+    "quantity": "मात्रा",
+    "status": "स्थिति",
+    "eta": "आगमन समय",
+    "minutes": "मिनट",
+    "tel": "कॉल करें",
+    "proofOfDelivery": "डिलिवरी का प्रमाण",
+    "submit": "जमा करें"
+  },
+  "nav": {
+    "home": "होम",
+    "storeDetail": "स्टोर विवरण",
+    "checkout": "चेकआउट",
+    "tracking": "ऑर्डर ट्रैकिंग",
+    "orders": "ऑर्डर",
+    "history": "ऑर्डर इतिहास",
+    "inventory": "इन्वेंट्री",
+    "profile": "प्रोफ़ाइल",
+    "dashboard": "डैशबोर्ड",
+    "earnings": "कमाई",
+    "users": "उपयोगकर्ता",
+    "approvals": "स्टोर स्वीकृतियां",
+    "logout": "लॉगआउट"
+  },
+  "auth": {
+    "loginTitle": "क्विककार्ट में आपका स्वागत है",
+    "registerTitle": "खाता बनाएं",
+    "phone": "फ़ोन नंबर",
+    "email": "ईमेल पता",
+    "password": "पासवर्ड",
+    "fullName": "पूरा नाम",
+    "otp": "ओटीपी सत्यापन",
+    "sendOtp": "ओटीपी भेजें",
+    "login": "लॉगिन",
+    "register": "रजिस्टर करें",
+    "selectRole": "अपनी भूमिका चुनें",
+    "storeName": "स्टोर का नाम",
+    "storeAddress": "स्टोर का पता",
+    "alreadyHaveAccount": "पहले से खाता है? लॉगिन करें",
+    "dontHaveAccount": "खाता नहीं है? रजिस्टर करें"
+  },
+  "status": {
+    "PENDING": "ऑर्डर दिया गया",
+    "CONFIRMED": "पुष्टि की गई",
+    "PREPARING": "तैयार हो रहा है",
+    "READY": "पिकअप के लिए तैयार",
+    "PICKED_UP": "पिकअप किया गया",
+    "DELIVERED": "वितरित",
+    "CANCELLED": "रद्द",
+    "REFUNDED": "रिफंड किया गया"
+  },
+  "buttons": {
+    "addToCart": "कार्ट में जोड़ें",
+    "viewCart": "कार्ट देखें",
+    "placeOrder": "ऑर्डर दें",
+    "accept": "स्वीकार करें",
+    "reject": "अस्वीकार करें",
+    "markReady": "तैयार चिह्नित करें",
+    "claimBatch": "निकटतम बैच दावा करें",
+    "markPickedUp": "पिकअप चिह्नित करें",
+    "markDelivered": "डिलिवरी चिह्नित करें",
+    "approve": "स्वीकृत करें",
+    "uploadPhoto": "फोटो अपलोड करें"
+  }
+}

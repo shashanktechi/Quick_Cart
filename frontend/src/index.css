@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0F766E;
+  --color-accent: #F97316;
+
+  /* Teal palette */
+  --color-teal: #0F766E;
+  --color-teal-light: #14B8A6;
+  --color-teal-dark: #0B5A54;
+
+  /* Coral palette */
+  --color-coral: #F97316;
+  --color-coral-light: #FB923C;
+  --color-coral-dark: #EA6B0B;
+
+  /* Surface */
+  --color-surface: #FAFAF9;
+  --color-surface-dark: #111827;
+
+  /* Card radius */
+  --radius-card: 14px;
+
+  /* Typography */
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-surface);
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dark body {
+    background-color: var(--color-surface-dark);
+    color: #f3f4f6;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #374151;
+  }
+
+  /* Leaflet z-index fixes */
+  .leaflet-control-container {
+    z-index: 400;
+  }
+  .leaflet-pane {
+    z-index: 300;
+  }
+}
+
+@layer utilities {
+  /* Gradient background utility used by AuthLayout */
+  .bg-radial {
+    background: radial-gradient(ellipse at top left, var(--tw-gradient-stops));
+  }
+
+  /* Rounded card shorthand */
+  .rounded-card {
+    border-radius: var(--radius-card);
+  }
+}

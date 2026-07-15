@@ -2,13 +2,21 @@ package com.quickcart.controller;
 
 import com.quickcart.dto.request.OrderRequest;
 import com.quickcart.entity.Order;
+import com.quickcart.entity.Store;
+import com.quickcart.entity.User;
+import com.quickcart.entity.Inventory;
 import com.quickcart.service.OrderRoutingService;
+import com.quickcart.service.InventoryService;
+import com.quickcart.repository.StoreRepository;
+import com.quickcart.repository.OrderRepository;
+import com.quickcart.repository.UserRepository;
 import com.quickcart.config.CurrentUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -19,7 +27,75 @@ public class CustomerController {
     private OrderRoutingService orderRoutingService;
 
     @Autowired
+    private StoreRepository storeRepository;
+
+    @Autowired
+    private InventoryService inventoryService;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private CurrentUserProvider currentUserProvider;
+
+    @GetMapping("/stores/nearby")
+    public ResponseEntity<?> getNearbyStores(@RequestParam double lat, @RequestParam double lng) {
+        List<Store> stores = storeRepository.findNearestStores(lat, lng);
+        return ResponseEntity.ok(stores);
+    }
+
+    @GetMapping("/stores/{storeId}/inventory")
+    public ResponseEntity<?> getStoreInventory(@PathVariable Long storeId) {
+        List<Inventory> inventoryList = inventoryService.getInventoryByStore(storeId);
+        return ResponseEntity.ok(inventoryList);
+    }
+
+    @GetMapping("/orders")
+    public ResponseEntity<?> getOrderHistory() {
+        Long customerId = currentUserProvider.getCurrentUserId();
+        if (customerId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        List<Order> orders = orderRepository.findByCustomerId(customerId);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<?> getOrderDetails(@PathVariable Long id) {
+        Long customerId = currentUserProvider.getCurrentUserId();
+        if (customerId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        if (!order.getCustomer().getId().equals(customerId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: You do not own this order"));
+        }
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile() {
+        Long customerId = currentUserProvider.getCurrentUserId();
+        if (customerId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        User user = userRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "phone", user.getPhone(),
+                "email", user.getEmail() != null ? user.getEmail() : "",
+                "fullName", user.getFullName() != null ? user.getFullName() : "",
+                "role", user.getRole(),
+                "trustScore", user.getTrustScore(),
+                "profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : "",
+                "vehicleDocUrl", user.getVehicleDocUrl() != null ? user.getVehicleDocUrl() : ""
+        ));
+    }
 
     @PostMapping("/orders")
     public ResponseEntity<?> placeOrder(@RequestBody @org.springframework.lang.NonNull @jakarta.validation.Valid OrderRequest request) {

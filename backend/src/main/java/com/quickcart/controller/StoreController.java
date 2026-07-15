@@ -44,6 +44,48 @@ public class StoreController {
     @Autowired
     private CurrentUserProvider currentUserProvider;
 
+    @Autowired
+    private com.quickcart.repository.StoreRepository storeRepository;
+
+    @Autowired
+    private com.quickcart.repository.UserRepository userRepository;
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getStoreProfile() {
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        Long userId = currentUserProvider.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        com.quickcart.entity.User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        com.quickcart.entity.Store store = null;
+        if (storeId != null) {
+            store = storeRepository.findById(storeId).orElse(null);
+        }
+        return ResponseEntity.ok(Map.of(
+                "user", Map.of(
+                        "id", user.getId(),
+                        "phone", user.getPhone(),
+                        "email", user.getEmail() != null ? user.getEmail() : "",
+                        "fullName", user.getFullName() != null ? user.getFullName() : "",
+                        "role", user.getRole(),
+                        "profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : ""
+                ),
+                "store", store != null ? Map.of(
+                        "id", store.getId(),
+                        "name", store.getName(),
+                        "address", store.getAddress() != null ? store.getAddress() : "",
+                        "whatsappNumber", store.getWhatsappNumber() != null ? store.getWhatsappNumber() : "",
+                        "verificationStatus", store.getVerificationStatus(),
+                        "freshnessScore", store.getFreshnessScore(),
+                        "isOpen", store.getIsOpen(),
+                        "logoUrl", store.getLogoUrl() != null ? store.getLogoUrl() : "",
+                        "bannerUrl", store.getBannerUrl() != null ? store.getBannerUrl() : ""
+                ) : Map.of()
+        ));
+    }
+
     @GetMapping("/orders/incoming")
     public ResponseEntity<?> getIncomingOrders() {
         Long storeId = currentUserProvider.getCurrentStoreId();
