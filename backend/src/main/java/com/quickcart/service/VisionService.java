@@ -61,17 +61,18 @@ public class VisionService {
             );
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+            @SuppressWarnings("rawtypes")
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List candidates = (List) response.getBody().get("candidates");
+                List<?> candidates = (List<?>) response.getBody().get("candidates");
                 if (candidates != null && !candidates.isEmpty()) {
-                    Map candidate = (Map) candidates.get(0);
-                    Map content = (Map) candidate.get("content");
+                    Map<?, ?> candidate = (Map<?, ?>) candidates.get(0);
+                    Map<?, ?> content = (Map<?, ?>) candidate.get("content");
                     if (content != null) {
-                        List parts = (List) content.get("parts");
+                        List<?> parts = (List<?>) content.get("parts");
                         if (parts != null && !parts.isEmpty()) {
-                            Map part = (Map) parts.get(0);
+                            Map<?, ?> part = (Map<?, ?>) parts.get(0);
                             String text = (String) part.get("text");
                             if (text != null) {
                                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
@@ -125,21 +126,22 @@ public class VisionService {
             );
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+            @SuppressWarnings("rawtypes")
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List candidates = (List) response.getBody().get("candidates");
+                List<?> candidates = (List<?>) response.getBody().get("candidates");
                 if (candidates != null && !candidates.isEmpty()) {
-                    Map candidate = (Map) candidates.get(0);
-                    Map content = (Map) candidate.get("content");
+                    Map<?, ?> candidate = (Map<?, ?>) candidates.get(0);
+                    Map<?, ?> content = (Map<?, ?>) candidate.get("content");
                     if (content != null) {
-                        List parts = (List) content.get("parts");
+                        List<?> parts = (List<?>) content.get("parts");
                         if (parts != null && !parts.isEmpty()) {
-                            Map part = (Map) parts.get(0);
+                            Map<?, ?> part = (Map<?, ?>) parts.get(0);
                             String text = (String) part.get("text");
                             if (text != null) {
                                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                                Map resultMap = mapper.readValue(text, Map.class);
+                                Map<?, ?> resultMap = mapper.readValue(text, Map.class);
                                 boolean approved = Boolean.TRUE.equals(resultMap.get("approved"));
                                 String reason = (String) resultMap.get("reason");
                                 boolean requiresAdminReview = Boolean.TRUE.equals(resultMap.get("requiresAdminReview"));

@@ -36,9 +36,10 @@ public class WeatherAnalyticsService {
 
         try {
             String url = String.format("https://api.open-meteo.com/v1/forecast?latitude=%.4f&longitude=%.4f&current=temperature_2m,precipitation_probability,weather_code", lat, lng);
+            @SuppressWarnings("rawtypes")
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map current = (Map) response.getBody().get("current");
+                Map<?, ?> current = (Map<?, ?>) response.getBody().get("current");
                 if (current != null) {
                     Number temp = (Number) current.get("temperature_2m");
                     Number rainProb = (Number) current.get("precipitation_probability");
