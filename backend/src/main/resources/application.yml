@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:database-1.cu3ikoym0hs3.us-east-1.rds.amazonaws.com}:${DB_PORT:5432}/${DB_NAME:studentdb}
     username: ${DB_USER:admin123}
-    password: ${DB_PASSWORD:sunny@2005}
+    password: ${DB_PASSWORD:sunny2005}
     driver-class-name: org.postgresql.Driver
   # We use ddl-auto: update based on deployment settings.
   jpa:

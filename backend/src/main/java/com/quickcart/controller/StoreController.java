@@ -1,12 +1,16 @@
 package com.quickcart.controller;
 
 import com.quickcart.config.CurrentUserProvider;
-import com.quickcart.service.InventoryService;
-import com.quickcart.dto.request.StoreProductRequest;
-import com.quickcart.entity.Inventory;
+import com.quickcart.dto.request.OrderStatusUpdateRequest;
+import com.quickcart.dto.request.InventoryQuantityUpdateRequest;
 import com.quickcart.entity.Order;
+import com.quickcart.entity.Inventory;
 import com.quickcart.repository.OrderRepository;
+import com.quickcart.repository.InventoryRepository;
+import com.quickcart.service.InventoryService;
 import com.quickcart.service.NotificationService;
+import com.quickcart.service.VisionService;
+import com.quickcart.service.WeatherAnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,11 +49,15 @@ public class StoreController {
         if (storeId == null) return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         return ResponseEntity.ok(orderRepository.findByStoreIdAndStatus(storeId, "PENDING"));
     }
-    
+
     @PutMapping("/orders/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody @jakarta.validation.Valid com.quickcart.dto.request.OrderStatusUpdateRequest request) {
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody @jakarta.validation.Valid OrderStatusUpdateRequest request) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        Long currentStoreId = currentUserProvider.getCurrentStoreId();
+        if (currentStoreId == null || !order.getStore().getId().equals(currentStoreId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Order does not belong to your store"));
+        }
         String newStatus = request.getStatus().name();
         order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
@@ -58,7 +66,7 @@ public class StoreController {
             notificationService.notifyCustomer(savedOrder.getCustomer().getId(), savedOrder);
         }
 
-        return ResponseEntity.ok(Map.of("success", true, "newStatus", newStatus));
+        return ResponseEntity.ok(Map.of("success": true, "newStatus": newStatus));
     }
 
     @PostMapping("/products")
@@ -78,8 +86,12 @@ public class StoreController {
     }
 
     @PutMapping("/inventory/{id}")
-    public ResponseEntity<?> updateInventoryQuantity(@PathVariable Long id, @RequestBody @jakarta.validation.Valid com.quickcart.dto.request.InventoryQuantityUpdateRequest request) {
-        Inventory inventory = inventoryService.updateQuantity(id, request.getQuantity());
+    public ResponseEntity<?> updateInventoryQuantity(@PathVariable Long id, @RequestBody @jakarta.validation.Valid InventoryQuantityUpdateRequest request) {
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        if (storeId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        Inventory inventory = inventoryService.updateQuantity(storeId, id, request.getQuantity());
         return ResponseEntity.ok(inventory);
     }
 

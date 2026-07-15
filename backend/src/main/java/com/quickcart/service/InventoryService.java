@@ -52,9 +52,12 @@ public class InventoryService {
     }
 
     @Transactional
-    public Inventory updateQuantity(Long inventoryId, Integer quantity) {
+    public Inventory updateQuantity(Long storeId, Long inventoryId, Integer quantity) {
         Inventory inventory = inventoryRepository.findById(inventoryId)
                 .orElseThrow(() -> new RuntimeException("Inventory item not found"));
+        if (!inventory.getStore().getId().equals(storeId)) {
+            throw new RuntimeException("Inventory item does not belong to your store");
+        }
         inventory.setQuantity(quantity);
         return inventoryRepository.save(inventory);
     }

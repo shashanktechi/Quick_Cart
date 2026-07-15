@@ -29,6 +29,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOrigins("http://localhost:3000")
                 .withSockJS();
     }
+<<<<<<< Updated upstream
 
     @Override
     public void configureClientInboundChannel(org.springframework.messaging.simp.config.ChannelRegistration registration) {
@@ -40,3 +41,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         return new WebSocketAuthInterceptor();
     }
 }
+=======
+}
+>>>>>>> Stashed changes
