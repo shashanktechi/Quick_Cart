@@ -33,6 +33,16 @@ public class AdminController {
     @Autowired
     private CurrentUserProvider currentUserProvider;
 
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
+    }
+
+    @GetMapping("/stores")
+    public ResponseEntity<?> getAllStores() {
+        return ResponseEntity.ok(storeRepository.findAll());
+    }
+
     @GetMapping("/stores/pending")
     public ResponseEntity<?> getPendingStores() {
         List<Store> pendingStores = storeRepository.findByVerificationStatus("PENDING");

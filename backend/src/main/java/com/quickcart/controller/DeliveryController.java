@@ -37,6 +37,29 @@ public class DeliveryController {
     @Autowired
     private SwarmBatchingService swarmBatchingService;
 
+    @Autowired
+    private com.quickcart.repository.UserRepository userRepository;
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getDeliveryProfile() {
+        Long partnerId = currentUserProvider.getCurrentUserId();
+        if (partnerId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        com.quickcart.entity.User user = userRepository.findById(partnerId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "phone", user.getPhone(),
+                "email", user.getEmail() != null ? user.getEmail() : "",
+                "fullName", user.getFullName() != null ? user.getFullName() : "",
+                "role", user.getRole(),
+                "trustScore", user.getTrustScore(),
+                "profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : "",
+                "vehicleDocUrl", user.getVehicleDocUrl() != null ? user.getVehicleDocUrl() : ""
+        ));
+    }
+
     @GetMapping("/tasks")
     public ResponseEntity<?> getAssignedTasks() {
         Long partnerId = currentUserProvider.getCurrentUserId();
