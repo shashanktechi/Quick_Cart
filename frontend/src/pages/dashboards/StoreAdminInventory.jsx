@@ -108,7 +108,7 @@ export function StoreAdminInventory() {
       if (err.response && err.response.status === 403) {
         alert('Your store is currently pending approval. You cannot add products until an admin approves your store.');
       } else {
-        alert(err.response?.data?.error || 'Failed to add product. Please try again.');
+        alert(err.response?.data?.error || err.response?.data?.message || 'Failed to add product. Please try again.');
       }
     }
   };

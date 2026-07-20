@@ -44,7 +44,7 @@ export const ImageUploader = ({
       }
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.response?.data?.error || err.message || "Failed to upload image");
+      setError(err.response?.data?.error || err.response?.data?.message || err.message || "Failed to upload image");
     } finally {
       setLoading(false);
       if (fileInputRef.current) {

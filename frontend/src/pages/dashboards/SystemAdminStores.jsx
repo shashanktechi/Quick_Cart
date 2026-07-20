@@ -27,8 +27,14 @@ export function SystemAdminStores() {
   }, []);
 
   const handleStoreVerify = async (storeId, status) => {
+    let reason = '';
+    if (status === 'REJECTED') {
+      const promptRes = prompt('Please enter the reason for rejection (optional):');
+      if (promptRes === null) return; // Cancel clicked
+      reason = promptRes;
+    }
     try {
-      await api.put(`/admin/stores/${storeId}/verify?status=${encodeURIComponent(status)}`);
+      await api.put(`/admin/stores/${storeId}/verify`, { status, reason });
       // Update local state
       setStores(stores.map(s => 
         s.id === storeId 

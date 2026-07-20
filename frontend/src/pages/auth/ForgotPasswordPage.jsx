@@ -25,7 +25,7 @@ export function ForgotPasswordPage() {
       await api.post('/auth/forgot-password', { email });
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to send OTP. Please try again.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ export function ForgotPasswordPage() {
       setResetToken(res.data.resetToken);
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid or expired OTP.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Invalid or expired OTP.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export function ForgotPasswordPage() {
       await api.post('/auth/reset-password', { email, resetToken, newPassword });
       navigate('/login', { state: { message: 'Password reset successful. Please log in.' } });
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to reset password.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }

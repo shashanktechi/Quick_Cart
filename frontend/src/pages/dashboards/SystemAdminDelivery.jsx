@@ -29,8 +29,14 @@ export function SystemAdminDelivery() {
   }, []);
 
   const handlePartnerVerify = async (partnerId, status) => {
+    let reason = '';
+    if (status === 'REJECTED') {
+      const promptRes = prompt('Please enter the reason for rejection (optional):');
+      if (promptRes === null) return; // Cancel clicked
+      reason = promptRes;
+    }
     try {
-      await api.put(`/admin/delivery-partners/${partnerId}/verify?status=${encodeURIComponent(status)}`);
+      await api.put(`/admin/delivery-partners/${partnerId}/verify`, { status, reason });
       // Update local state instead of filtering out
       setPartners(partners.map(p => 
         p.id === partnerId 
