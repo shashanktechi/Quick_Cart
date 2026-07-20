@@ -87,13 +87,14 @@ public class StoreController {
             store = storeRepository.findById(storeId).orElse(null);
         }
         if (store == null && "STORE_ADMIN".equals(user.getRole())) {
-            store = storeRepository.findByOwnerId(userId).orElse(null);
+            java.util.List<Store> ownerStores = storeRepository.findByOwnerId(userId);
+            store = ownerStores.isEmpty() ? null : ownerStores.get(0);
         }
 
         return ResponseEntity.ok(Map.of(
                 "user", Map.of(
                         "id", user.getId(),
-                        "phone", user.getPhone(),
+                        "phone", user.getPhone() != null ? user.getPhone() : "",
                         "email", user.getEmail() != null ? user.getEmail() : "",
                         "fullName", user.getFullName() != null ? user.getFullName() : "",
                         "role", user.getRole(),
@@ -176,12 +177,26 @@ public class StoreController {
         Store store = getCurrentStoreForMutatingOperations();
         Long storeId = store.getId();
 
+        java.time.LocalDateTime expiryTime = null;
+        if (request.getExpiryTime() != null && !request.getExpiryTime().trim().isEmpty()) {
+            try {
+                // Handle "2024-01-15T10:30" (no seconds) and full ISO format
+                String expiryStr = request.getExpiryTime().trim();
+                if (expiryStr.length() == 16) {
+                    expiryStr = expiryStr + ":00"; // append seconds
+                }
+                expiryTime = java.time.LocalDateTime.parse(expiryStr);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid expiry time format. Use YYYY-MM-DDTHH:mm"));
+            }
+        }
+
         Inventory inventory = inventoryService.addProductToStore(
                 storeId,
                 request.getProduct(),
                 request.getQuantity(),
                 request.getBatchCode(),
-                request.getExpiryTime()
+                expiryTime
         );
         return ResponseEntity.ok(inventory);
     }

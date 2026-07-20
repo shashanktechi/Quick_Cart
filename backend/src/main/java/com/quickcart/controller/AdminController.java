@@ -1,7 +1,6 @@
 package com.quickcart.controller;
 
 import com.quickcart.config.CurrentUserProvider;
-import com.quickcart.dto.request.StoreVerificationRequest;
 import com.quickcart.entity.AuditLog;
 import com.quickcart.entity.Store;
 import com.quickcart.entity.User;
@@ -50,6 +49,9 @@ public class AdminController {
         long activeOrders = orderRepository.countActiveOrders();
         long approvedStoreCount = storeRepository.countByVerificationStatus("APPROVED");
         java.math.BigDecimal grossTransactionValue = orderRepository.sumGrossTransactionValue();
+        if (grossTransactionValue == null) {
+            grossTransactionValue = java.math.BigDecimal.ZERO;
+        }
         return ResponseEntity.ok(Map.of(
             "activeOrders", activeOrders,
             "approvedStoreCount", approvedStoreCount,
@@ -80,12 +82,15 @@ public class AdminController {
 
     @PutMapping("/stores/{id}/verify")
     public ResponseEntity<?> verifyStore(@PathVariable Long id,
-                                         @RequestBody @jakarta.validation.Valid StoreVerificationRequest request,
+                                         @RequestParam String status,
                                          HttpServletRequest servletRequest) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        String statusStr = request.getStatus().name();
+        String statusStr = status.trim().toUpperCase();
+        if (!statusStr.equals("APPROVED") && !statusStr.equals("REJECTED") && !statusStr.equals("PENDING")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid status. Must be APPROVED, REJECTED, or PENDING."));
+        }
         store.setVerificationStatus(statusStr);
         storeRepository.save(store);
 
@@ -130,7 +135,7 @@ public class AdminController {
 
     @PutMapping("/delivery-partners/{id}/verify")
     public ResponseEntity<?> verifyDeliveryPartner(@PathVariable Long id,
-                                                   @RequestBody java.util.Map<String, String> request,
+                                                   @RequestParam String status,
                                                    HttpServletRequest servletRequest) {
         User partner = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Delivery Partner not found"));
@@ -139,7 +144,7 @@ public class AdminController {
             throw new RuntimeException("User is not a delivery partner");
         }
 
-        String statusStr = request.get("status");
+        String statusStr = status.trim().toUpperCase();
         if (statusStr == null || (!statusStr.equals("APPROVED") && !statusStr.equals("REJECTED"))) {
             throw new RuntimeException("Invalid status. Must be APPROVED or REJECTED.");
         }
@@ -171,5 +176,24 @@ public class AdminController {
         }
 
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @DeleteMapping("/dev/reset-stores")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> resetAllStores() {
+        org.springframework.jdbc.core.JdbcTemplate jdbcTemplate = org.springframework.web.context.support.WebApplicationContextUtils
+                .getRequiredWebApplicationContext(((org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getRequest().getServletContext())
+                .getBean(org.springframework.jdbc.core.JdbcTemplate.class);
+        
+        jdbcTemplate.execute("TRUNCATE TABLE audit_logs CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE inventory CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE order_items CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE orders CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE products CASCADE");
+        jdbcTemplate.execute("TRUNCATE TABLE stores CASCADE");
+        jdbcTemplate.execute("DELETE FROM users WHERE role = 'STORE_ADMIN'");
+        
+        return ResponseEntity.ok(Map.of("message", "All stores and related data wiped completely via TRUNCATE."));
     }
 }

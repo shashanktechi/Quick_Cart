@@ -10,21 +10,19 @@ public class VectorConverter implements AttributeConverter<float[], Object> {
 
     @Override
     public Object convertToDatabaseColumn(float[] attribute) {
-        if (attribute == null) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        for (int i = 0; i < attribute.length; i++) {
-            sb.append(attribute[i]);
-            if (i < attribute.length - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("]");
         try {
+            float[] toConvert = attribute;
+            if (toConvert == null) {
+                toConvert = new float[384]; // default 384 dimensions for the AI model
+            }
             PGobject pgobj = new PGobject();
             pgobj.setType("vector");
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < toConvert.length; i++) {
+                sb.append(toConvert[i]);
+                if (i < toConvert.length - 1) sb.append(",");
+            }
+            sb.append("]");
             pgobj.setValue(sb.toString());
             return pgobj;
         } catch (SQLException e) {

@@ -29,6 +29,7 @@ public class User {
     private String email;
 
     @Column(name = "password_hash")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String passwordHash;
 
     @Column(name = "full_name")
@@ -72,6 +73,9 @@ public class User {
 
     @Column(name = "vehicle_number", length = 50)
     private String vehicleNumber;
+
+    @Column(name = "vehicle_photo_url")
+    private String vehiclePhotoUrl;
 
     @Column(length = 255)
     private String address;

@@ -294,9 +294,9 @@ public class AuthService {
 
         Long storeId = null;
         if (user.getRole().equals("STORE_ADMIN")) {
-            Optional<Store> storeOpt = storeRepository.findByOwnerId(user.getId());
-            if (storeOpt.isPresent()) {
-                storeId = storeOpt.get().getId();
+            java.util.List<Store> stores = storeRepository.findByOwnerId(user.getId());
+            if (!stores.isEmpty()) {
+                storeId = stores.get(0).getId();
             }
         }
 

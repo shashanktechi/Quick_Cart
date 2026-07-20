@@ -42,4 +42,16 @@ public class PublicController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/inventory/by-city")
+    public ResponseEntity<?> getInventoryByCity(@RequestParam String city) {
+        List<Store> stores = storeRepository.findByCityIgnoreCase(city).stream()
+                .filter(store -> "APPROVED".equals(store.getVerificationStatus()))
+                .collect(Collectors.toList());
+        List<Inventory> allInventory = new java.util.ArrayList<>();
+        for (Store s : stores) {
+            allInventory.addAll(inventoryService.getInventoryByStore(s.getId()));
+        }
+        return ResponseEntity.ok(allInventory);
+    }
 }

@@ -7,11 +7,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
-    Optional<Store> findByOwnerId(Long ownerId);
+    List<Store> findByOwnerId(Long ownerId);
 
     // Find stores that have all requested product IDs with required quantity
     // For simplicity, we pass a list of product IDs, but checking quantities for multiple products in a single native query requires advanced SQL.

@@ -41,15 +41,57 @@ public class AuthController {
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "fullName", user.getFullName(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "verificationStatus", user.getVerificationStatus(),
-                "profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : ""
-        ));
-    }
+        Long storeId = currentUserProvider.getCurrentStoreId();
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", user.getId());
+        response.put("fullName", user.getFullName());
+        response.put("email", user.getEmail());
+        response.put("role", user.getRole());
+        response.put("verificationStatus", user.getVerificationStatus());
+        response.put("profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : "");
+        response.put("phone", user.getPhone() != null ? user.getPhone() : "");
+        response.put("address", user.getAddress() != null ? user.getAddress() : "");
+        
+        if ("DELIVERY_PARTNER".equals(user.getRole())) {
+            response.put("vehicleName", user.getVehicleName() != null ? user.getVehicleName() : "");
+            response.put("vehicleModel", user.getVehicleModel() != null ? user.getVehicleModel() : "");
+            response.put("vehicleNumber", user.getVehicleNumber() != null ? user.getVehicleNumber() : "");
+            response.put("vehicleDocUrl", user.getVehicleDocUrl() != null ? user.getVehicleDocUrl() : "");
+            response.put("vehiclePhotoUrl", user.getVehiclePhotoUrl() != null ? user.getVehiclePhotoUrl() : "");
+        }
+        
+        if (storeId != null) {
+            response.put("storeId", storeId);
+        }
+        return ResponseEntity.ok(response);
+     }
+
+     @PutMapping("/me")
+     @PreAuthorize("isAuthenticated()")
+     public ResponseEntity<?> updateCurrentUser(@RequestBody com.quickcart.dto.request.ProfileUpdateRequest request) {
+         Long userId = currentUserProvider.getCurrentUserId();
+         if (userId == null) {
+             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+         }
+         User user = userRepository.findById(userId)
+                 .orElseThrow(() -> new RuntimeException("User not found"));
+         
+         if (request.getFullName() != null) user.setFullName(request.getFullName());
+         if (request.getAddress() != null) user.setAddress(request.getAddress());
+         if (request.getPhone() != null) user.setPhone(request.getPhone());
+         if (request.getProfilePhotoUrl() != null) user.setProfilePhotoUrl(request.getProfilePhotoUrl());
+         
+         if ("DELIVERY_PARTNER".equals(user.getRole())) {
+             if (request.getVehicleName() != null) user.setVehicleName(request.getVehicleName());
+             if (request.getVehicleModel() != null) user.setVehicleModel(request.getVehicleModel());
+             if (request.getVehicleNumber() != null) user.setVehicleNumber(request.getVehicleNumber());
+             if (request.getVehicleDocUrl() != null) user.setVehicleDocUrl(request.getVehicleDocUrl());
+             if (request.getVehiclePhotoUrl() != null) user.setVehiclePhotoUrl(request.getVehiclePhotoUrl());
+         }
+         
+         userRepository.save(user);
+         return ResponseEntity.ok(Map.of("success", true, "message", "Profile updated successfully"));
+     }
 
     @PostMapping("/otp/send")
     public ResponseEntity<?> sendOtp(@RequestBody AuthRequest request) {

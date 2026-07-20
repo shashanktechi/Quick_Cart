@@ -42,7 +42,7 @@ public class InventoryService {
         inventory.setStore(store);
         inventory.setProduct(savedProduct);
         inventory.setQuantity(quantity);
-        inventory.setBatchCode(batchCode != null ? batchCode : "BATCH-" + System.currentTimeMillis());
+        inventory.setBatchCode(batchCode != null && !batchCode.trim().isEmpty() ? batchCode : "BATCH-" + System.currentTimeMillis());
         inventory.setExpiryTime(expiryTime != null ? expiryTime : LocalDateTime.now().plusHours(
                 savedProduct.getTypicalShelfLifeHours() != null ? savedProduct.getTypicalShelfLifeHours() : 72
         ));

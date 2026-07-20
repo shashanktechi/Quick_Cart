@@ -66,16 +66,21 @@ public class DeliveryController {
         }
         com.quickcart.entity.User user = userRepository.findById(partnerId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "phone", user.getPhone(),
-                "email", user.getEmail() != null ? user.getEmail() : "",
-                "fullName", user.getFullName() != null ? user.getFullName() : "",
-                "role", user.getRole(),
-                "trustScore", user.getTrustScore(),
-                "profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : "",
-                "vehicleDocUrl", user.getVehicleDocUrl() != null ? user.getVehicleDocUrl() : ""
-        ));
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("id", user.getId());
+        response.put("phone", user.getPhone());
+        response.put("email", user.getEmail() != null ? user.getEmail() : "");
+        response.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+        response.put("role", user.getRole());
+        response.put("trustScore", user.getTrustScore());
+        response.put("profilePhotoUrl", user.getProfilePhotoUrl() != null ? user.getProfilePhotoUrl() : "");
+        response.put("vehicleDocUrl", user.getVehicleDocUrl() != null ? user.getVehicleDocUrl() : "");
+        response.put("vehiclePhotoUrl", user.getVehiclePhotoUrl() != null ? user.getVehiclePhotoUrl() : "");
+        response.put("vehicleName", user.getVehicleName() != null ? user.getVehicleName() : "");
+        response.put("vehicleModel", user.getVehicleModel() != null ? user.getVehicleModel() : "");
+        response.put("vehicleNumber", user.getVehicleNumber() != null ? user.getVehicleNumber() : "");
+        response.put("verificationStatus", user.getVerificationStatus() != null ? user.getVerificationStatus() : "PENDING");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/tasks")

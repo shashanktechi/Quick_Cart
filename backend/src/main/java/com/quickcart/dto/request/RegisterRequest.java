@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class RegisterRequest {
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be 10-15 digits and can optionally start with +")
+    @Pattern(regexp = "^[+]?[\\d\\s\\-]{7,20}$", message = "Phone number must be 7-20 digits and can optionally start with +")
     private String phone;
 
     @Email(message = "Please provide a valid email address")

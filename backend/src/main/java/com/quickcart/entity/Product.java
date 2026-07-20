@@ -32,8 +32,7 @@ public class Product {
 
     // pgvector column mapping
     @Column(columnDefinition = "vector(384)")
-    @Convert(converter = com.quickcart.util.VectorConverter.class)
-    private float[] embedding;
+    private com.pgvector.PGvector embedding;
 
     @Column(name = "typical_shelf_life_hours")
     private Integer typicalShelfLifeHours;
