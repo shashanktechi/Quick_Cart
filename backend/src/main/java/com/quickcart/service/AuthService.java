@@ -383,7 +383,7 @@ public class AuthService {
         }
 
         if ("STORE_ADMIN".equals(role) || "DELIVERY_PARTNER".equals(role)) {
-            user.setVerificationStatus("PENDING");
+            user.setVerificationStatus("APPROVED"); // Auto-approve for dev convenience
         } else {
             user.setVerificationStatus("APPROVED");
         }
@@ -404,7 +404,7 @@ public class AuthService {
             Store store = new Store();
             store.setOwner(user);
             store.setName(request.getStoreName());
-            store.setCity(request.getCity());
+            store.setCity(request.getCity().trim());
             store.setAddress(request.getStoreAddress());
             try {
                 org.locationtech.jts.geom.GeometryFactory geometryFactory = new org.locationtech.jts.geom.GeometryFactory(
@@ -415,7 +415,7 @@ public class AuthService {
             } catch (Exception e) {
                 throw new RuntimeException("Error creating location point: " + e.getMessage());
             }
-            store.setVerificationStatus("PENDING");
+            store.setVerificationStatus("APPROVED"); // Auto-approve for dev convenience
             store = storeRepository.save(store);
             storeId = store.getId();
         }

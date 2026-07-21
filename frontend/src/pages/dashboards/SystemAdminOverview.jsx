@@ -58,10 +58,16 @@ export function SystemAdminOverview() {
   const handleAction = async (approvalId, type, action) => {
     try {
       const status = action === 'approve' ? 'APPROVED' : 'REJECTED';
+      let reason = '';
+      if (status === 'REJECTED') {
+        const promptRes = prompt('Please enter the reason for rejection (optional):');
+        if (promptRes === null) return; // Cancel clicked
+        reason = promptRes;
+      }
       if (type === 'STORE_ADMIN') {
-        await api.put(`/admin/stores/${approvalId}/verify?status=${encodeURIComponent(status)}`);
+        await api.put(`/admin/stores/${approvalId}/verify`, { status, reason });
       } else {
-        await api.put(`/admin/delivery-partners/${approvalId}/verify?status=${encodeURIComponent(status)}`);
+        await api.put(`/admin/delivery-partners/${approvalId}/verify`, { status, reason });
       }
       setApprovals(approvals.filter(a => !(a.id === approvalId && a.type === type)));
       setToastMessage(`${type.replace('_', ' ')} has been ${status.toLowerCase()} successfully!`);

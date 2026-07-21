@@ -43,7 +43,7 @@ export function SystemAdminDashboard() {
         </div>
       </header>
 
-      <main className="pt-24 pb-12 w-full px-4 sm:px-6 max-w-7xl mx-auto">
+      <main className="pt-24 pb-12 w-full px-4 sm:px-6">
         <div className="mb-8">
           <h1 className="font-bold text-3xl sm:text-4xl text-ink tracking-tight">System Admin Console</h1>
         </div>

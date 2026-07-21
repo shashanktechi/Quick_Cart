@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge';
 export function StoreAdminInventory() {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -28,10 +29,12 @@ export function StoreAdminInventory() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
+      setFetchError(false);
       const res = await api.get('/store/inventory');
       setInventory(res.data);
     } catch (err) {
       console.error('Failed to fetch inventory', err);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -108,7 +111,22 @@ export function StoreAdminInventory() {
       if (err.response && err.response.status === 403) {
         alert('Your store is currently pending approval. You cannot add products until an admin approves your store.');
       } else {
-        alert(err.response?.data?.error || err.response?.data?.message || 'Failed to add product. Please try again.');
+        const errorData = err.response?.data;
+        let errorMsg = 'Failed to add product. Please try again.';
+        if (errorData) {
+          if (errorData.error) {
+            errorMsg = errorData.error;
+          } else if (errorData.message) {
+            errorMsg = errorData.message;
+          } else if (errorData.errors) {
+            if (typeof errorData.errors === 'object') {
+              errorMsg = Object.values(errorData.errors).join(', ');
+            } else {
+              errorMsg = String(errorData.errors);
+            }
+          }
+        }
+        alert(errorMsg);
       }
     }
   };
@@ -138,12 +156,25 @@ export function StoreAdminInventory() {
     return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <AlertTriangle className="w-12 h-12 text-danger mb-4" />
+        <h3 className="text-lg font-bold text-ink mb-2">Couldn't load inventory</h3>
+        <p className="text-sm text-ink-muted mb-4">There was an error loading your inventory list. Please try again.</p>
+        <Button onClick={fetchInventory} className="flex items-center gap-2">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   const totalItems = inventory.length;
   const lowStockCount = inventory.filter(i => i.quantity > 0 && i.quantity < 10).length;
   const outOfStockCount = inventory.filter(i => i.quantity === 0).length;
 
   return (
-    <div className="flex flex-col gap-6 p-4 max-w-7xl mx-auto">
+    <div className="flex flex-col gap-6 p-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="font-bold text-2xl text-ink">Inventory Management</h2>

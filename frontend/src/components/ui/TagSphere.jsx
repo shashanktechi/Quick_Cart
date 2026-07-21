@@ -106,9 +106,9 @@ export function TagSphere() {
     rotX: 0,
     rotY: 0,
     velX: 0,
-    velY: 0.0003,
+    velY: 0.0009,
     targetVelX: 0,
-    targetVelY: 0.0003,
+    targetVelY: 0.0009,
     sphereRadius: 0,
     isDragging: false,
     lastPointerX: 0,
@@ -228,7 +228,7 @@ export function TagSphere() {
     setTimeout(() => {
       if (!state.current.isDragging) {
         state.current.targetVelX = 0;
-        state.current.targetVelY = 0.0003;
+        state.current.targetVelY = 0.0009;
       }
     }, 1500);
   }, []);
@@ -236,7 +236,7 @@ export function TagSphere() {
   const onMouseLeave = useCallback(() => {
     state.current.isDragging = false;
     state.current.targetVelX = 0;
-    state.current.targetVelY = 0.0003;
+    state.current.targetVelY = 0.0009;
   }, []);
 
   const onTouchStart = useCallback((e) => {
@@ -262,7 +262,7 @@ export function TagSphere() {
     setTimeout(() => {
       if (!state.current.isDragging) {
         state.current.targetVelX = 0;
-        state.current.targetVelY = 0.0003;
+        state.current.targetVelY = 0.0009;
       }
     }, 2000);
   }, []);
@@ -297,8 +297,7 @@ export function TagSphere() {
           >
             <Badge variant={point.variant} className="px-2 py-1 shadow-sm pointer-events-auto whitespace-nowrap">
               <div className="flex items-center gap-1.5">
-                <span className="text-base sm:text-lg leading-none">{point.icon}</span>
-                {point.text && <span className="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold">{point.text}</span>}
+                <span className="text-2xl sm:text-3xl leading-none">{point.icon}</span>
               </div>
             </Badge>
             {price && (
