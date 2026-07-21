@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS stores (
     freshness_score NUMERIC(3,1) DEFAULT 5.0,
     is_open BOOLEAN DEFAULT TRUE,
     logo_url VARCHAR(255),
+    store_type VARCHAR(20) DEFAULT 'STORE',
     banner_url VARCHAR(255)
 );
 
@@ -196,6 +197,7 @@ ALTER TABLE stores ADD COLUMN IF NOT EXISTS verification_status VARCHAR(50);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS freshness_score NUMERIC(3,1);
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_open BOOLEAN;
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo_url VARCHAR(255);
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS store_type VARCHAR(20) DEFAULT 'STORE';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS banner_url VARCHAR(255);
 
 -- Products
@@ -278,3 +280,22 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_order_id VARCHAR(255);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_payment_id VARCHAR(255);
+
+-- Category Taxes Table
+CREATE TABLE IF NOT EXISTS category_taxes (
+    id BIGSERIAL PRIMARY KEY,
+    category_name VARCHAR(100) UNIQUE NOT NULL,
+    tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO category_taxes (category_name, tax_percentage)
+VALUES 
+    ('Vegetables', 0.00),
+    ('Fruits', 0.00),
+    ('Dairy', 5.00),
+    ('Non-Veg', 5.00),
+    ('Snacks', 12.00),
+    ('Beverages', 18.00),
+    ('Household', 18.00)
+ON CONFLICT (category_name) DO NOTHING;

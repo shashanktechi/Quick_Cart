@@ -1,7 +1,6 @@
 package com.quickcart.controller;
 
 import com.quickcart.config.CurrentUserProvider;
-import com.quickcart.dto.request.OrderStatusUpdateRequest;
 import com.quickcart.dto.request.StoreProductRequest;
 import com.quickcart.dto.request.InventoryQuantityUpdateRequest;
 import com.quickcart.entity.Order;
@@ -109,7 +108,8 @@ public class StoreController {
                         "freshnessScore", store.getFreshnessScore() != null ? store.getFreshnessScore() : 0.0,
                         "isOpen", store.getIsOpen() != null ? store.getIsOpen() : false,
                         "logoUrl", store.getLogoUrl() != null ? store.getLogoUrl() : "",
-                        "bannerUrl", store.getBannerUrl() != null ? store.getBannerUrl() : ""
+                        "bannerUrl", store.getBannerUrl() != null ? store.getBannerUrl() : "",
+                        "storeType", store.getStoreType() != null ? store.getStoreType() : "STORE"
                 ) : Map.of()
         ));
     }
@@ -122,6 +122,12 @@ public class StoreController {
         if (request.containsKey("city") && request.get("city") != null) store.setCity((String) request.get("city"));
         if (request.containsKey("whatsappNumber")) store.setWhatsappNumber((String) request.get("whatsappNumber"));
         if (request.containsKey("isOpen")) store.setIsOpen((Boolean) request.get("isOpen"));
+        if (request.containsKey("storeType") && request.get("storeType") != null) {
+            String st = ((String) request.get("storeType")).trim().toUpperCase();
+            if (java.util.Set.of("MANDI", "STORE", "WHOLESALE", "SMALL_STORE").contains(st)) {
+                store.setStoreType(st);
+            }
+        }
         
         storeRepository.save(store);
 
@@ -150,22 +156,32 @@ public class StoreController {
     }
 
     @PutMapping("/orders/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody @jakarta.validation.Valid OrderStatusUpdateRequest request) {
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestBody Map<String, String> request) {
         // Check store approval for mutating operation
         getCurrentStoreForMutatingOperations();
 
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         Long currentStoreId = currentUserProvider.getCurrentStoreId();
         if (currentStoreId == null || !order.getStore().getId().equals(currentStoreId)) {
             return ResponseEntity.status(403).body(Map.of("error", "Access denied: Order does not belong to your store"));
         }
-        String newStatus = request.getStatus().name();
+
+        String newStatus = request.get("status");
+        if (newStatus == null || newStatus.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Status is required"));
+        }
+        newStatus = newStatus.trim().toUpperCase();
+
         order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
 
         if (savedOrder.getCustomer() != null) {
-            notificationService.notifyCustomer(savedOrder.getCustomer().getId(), savedOrder);
+            try {
+                notificationService.notifyCustomer(savedOrder.getCustomer().getId(), savedOrder);
+            } catch (Exception e) {
+                // Log but don't fail transaction
+            }
         }
 
         return ResponseEntity.ok(Map.of("success", true, "newStatus", newStatus));
@@ -222,6 +238,7 @@ public class StoreController {
     }
 
     @PostMapping("/inventory/analyze-shelf")
+    @PreAuthorize("hasRole('STORE_ADMIN')")
     public ResponseEntity<?> analyzeShelfPhoto(@RequestBody Map<String, String> body) {
         // Check store approval for mutating operation
         getCurrentStoreForMutatingOperations();

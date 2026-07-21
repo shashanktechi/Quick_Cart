@@ -2,6 +2,7 @@ package com.quickcart.dto.request;
 
 public enum OrderStatus {
     PENDING,
+    ACCEPTED,
     CONFIRMED,
     PREPARING,
     READY,

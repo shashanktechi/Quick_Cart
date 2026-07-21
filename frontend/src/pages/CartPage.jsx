@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { X, Home, Clock, Plus, Minus, ChevronRight, Info, Wallet, ArrowRight, Loader2, Sparkles, AlertCircle, Banknote, CreditCard } from 'lucide-react';
+import { X, Home, Clock, Plus, Minus, Info, ArrowRight, Loader2, Sparkles, AlertCircle, Banknote, CreditCard, MapPin } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
-import { getUserLocation } from '../utils/geo';
+import { getUserLocation, haversineDistance, formatDistance } from '../utils/geo';
+import { AddressMapModal } from '../components/ui/AddressMapModal';
 
 export function CartPage() {
   const navigate = useNavigate();
@@ -14,83 +14,162 @@ export function CartPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [tipAmount, setTipAmount] = useState(20);
+
+  // Delivery & Location States
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || '');
+  const [customerPos, setCustomerPos] = useState({ lat: 13.5532, lng: 78.5028 });
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // Tip & Payment States
+  const [tipAmount, setTipAmount] = useState(20);
+  const [customTip, setCustomTip] = useState('');
+  const [isCustomTipActive, setIsCustomTipActive] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('COD');
 
+  // Category Tax Rates from Admin
+  const [categoryTaxes, setCategoryTaxes] = useState({});
+
+  useEffect(() => {
+    // Attempt auto-location detection on load
+    getUserLocation()
+      .then((loc) => setCustomerPos({ lat: loc.lat, lng: loc.lng }))
+      .catch((e) => console.warn('Geo detection skipped in CartPage', e));
+
+    // Fetch Admin Category Taxes with silent default fallback
+    const defaultTaxMap = {
+      vegetables: 0.0,
+      fruits: 0.0,
+      dairy: 5.0,
+      'non-veg': 5.0,
+      snacks: 12.0,
+      beverages: 18.0,
+      household: 18.0
+    };
+    setCategoryTaxes(defaultTaxMap);
+
+    api.get('/public/category-taxes')
+      .then((res) => {
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const map = { ...defaultTaxMap };
+          res.data.forEach((t) => {
+            if (t.categoryName) {
+              map[t.categoryName.toLowerCase()] = parseFloat(t.taxPercentage) || 0;
+            }
+          });
+          setCategoryTaxes(map);
+        }
+      })
+      .catch(() => {
+        // Silent fallback without logging console error
+      });
+  }, []);
+
   const itemTotal = getCartTotal();
+
+  // Store coordinates (default Madanapalle store fallback)
+  const storeLat = cartItems[0]?.product?.storeLat || 13.5532;
+  const storeLng = cartItems[0]?.product?.storeLng || 78.5028;
+
+  // Distance driven in Km
+  const distanceKm = useMemo(() => {
+    return haversineDistance(storeLat, storeLng, customerPos.lat, customerPos.lng);
+  }, [storeLat, storeLng, customerPos]);
+
+  // Distance-Based Delivery Fee Slabs:
+  // 0 - 1 km: ₹10
+  // 1 - 2 km: ₹15
+  // 2 - 3 km: ₹20
+  // 3 - 5 km: ₹30
+  // > 5 km: ₹50 + ₹10/km
+  const deliveryFee = useMemo(() => {
+    if (itemTotal >= 500) return 0; // Free delivery threshold
+    if (distanceKm <= 1) return 10;
+    if (distanceKm <= 2) return 15;
+    if (distanceKm <= 3) return 20;
+    if (distanceKm <= 5) return 30;
+    return 50 + Math.ceil(distanceKm - 5) * 10;
+  }, [distanceKm, itemTotal]);
+
   const freeDeliveryThreshold = 500;
   const isFreeDelivery = itemTotal >= freeDeliveryThreshold;
   const remainingForFreeDelivery = isFreeDelivery ? 0 : freeDeliveryThreshold - itemTotal;
-  
-  const deliveryFee = isFreeDelivery ? 0 : 40;
-  const handlingFee = 5;
-  const taxes = itemTotal * 0.05; // 5% tax
 
-  const grandTotal = itemTotal + deliveryFee + handlingFee + taxes + tipAmount;
+  const handlingFee = 5;
+
+  // Category-based Item Taxes Calculation
+  const itemTaxes = useMemo(() => {
+    let totalTax = 0;
+    cartItems.forEach((item) => {
+      const cat = (item.product.category || 'General').toLowerCase();
+      const taxRate = categoryTaxes[cat] !== undefined ? categoryTaxes[cat] : 5.0; // fallback 5%
+      const itemSubtotal = (item.product.price || 0) * item.quantity;
+      totalTax += (itemSubtotal * taxRate) / 100;
+    });
+    return totalTax;
+  }, [cartItems, categoryTaxes]);
+
+  // 5% Delivery Tax
+  const deliveryTax = (deliveryFee * 0.05);
+
+  const activeTip = isCustomTipActive ? (parseFloat(customTip) || 0) : tipAmount;
+
+  const grandTotal = itemTotal + deliveryFee + handlingFee + itemTaxes + deliveryTax + activeTip;
+
+  const handleLocationConfirm = (location) => {
+    setCustomerPos({ lat: location.lat, lng: location.lng });
+    setDeliveryAddress(location.address);
+  };
 
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    
+
     setLoading(true);
     setError(null);
     try {
-      let lat = 0.0;
-      let lng = 0.0;
-      try {
-        const loc = await getUserLocation();
-        lat = loc.lat;
-        lng = loc.lng;
-      } catch (e) {
-        console.warn('Could not fetch location for checkout, using defaults', e);
-      }
-
       const orderRequest = {
-        items: cartItems.map(item => ({
+        items: cartItems.map((item) => ({
           productId: item.product.id,
           qty: item.quantity
         })),
-        deliveryAddress: deliveryAddress || 'Address not provided',
-        customerLat: lat,
-        customerLng: lng,
+        deliveryAddress: deliveryAddress || 'Selected Address',
+        customerLat: customerPos.lat,
+        customerLng: customerPos.lng,
         paymentMethod: paymentMethod
       };
-      
+
       const response = await api.post('/customer/orders', orderRequest);
       const orderId = response.data.id;
 
       if (paymentMethod === 'RAZORPAY') {
         const rzpRes = await api.post('/payment/create-razorpay-order', { orderId });
         const options = {
-            key: "rzp_test_TG4Dgisjo7B8Wa",
-            amount: Math.round(grandTotal * 100), // in paise
-            currency: "INR",
-            name: "QuickCart",
-            description: "Order Payment",
-            order_id: rzpRes.data.razorpayOrderId,
-            handler: async function (response) {
-                await api.post('/payment/verify', {
-                    razorpayOrderId: response.razorpay_order_id,
-                    razorpayPaymentId: response.razorpay_payment_id,
-                    razorpaySignature: response.razorpay_signature,
-                    orderId: orderId.toString()
-                });
-                clearCart();
-                navigate('/track', { state: { orderId } });
-            },
-            prefill: {
-                name: user?.name || "Customer",
-                email: user?.email || "",
-                contact: user?.phone || ""
-            },
-            theme: {
-                color: "#16A34A"
-            }
+          key: "rzp_test_TG4Dgisjo7B8Wa",
+          amount: Math.round(grandTotal * 100),
+          currency: "INR",
+          name: "QuickCart",
+          description: "Order Payment",
+          order_id: rzpRes.data.razorpayOrderId,
+          handler: async function (res) {
+            await api.post('/payment/verify', {
+              razorpayOrderId: res.razorpay_order_id,
+              razorpayPaymentId: res.razorpay_payment_id,
+              razorpaySignature: res.razorpay_signature,
+              orderId: orderId.toString()
+            });
+            clearCart();
+            navigate('/track', { state: { orderId } });
+          },
+          prefill: {
+            name: user?.name || "Customer",
+            email: user?.email || "",
+            contact: user?.phone || ""
+          },
+          theme: { color: "#16A34A" }
         };
         const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response){
-            alert('Payment failed. Please try again.');
-            setLoading(false);
+        rzp.on('payment.failed', function () {
+          alert('Payment failed. Please try again.');
+          setLoading(false);
         });
         rzp.open();
       } else {
@@ -106,14 +185,14 @@ export function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="bg-background font-body text-ink antialiased min-h-screen">
-        <div className="w-full bg-surface h-full min-h-screen flex flex-col relative items-center justify-center p-8">
+      <div className="bg-background font-body text-ink antialiased min-h-screen flex items-center justify-center p-8">
+        <div className="bg-surface p-8 rounded-2xl border border-border shadow-sm text-center max-w-sm w-full">
           <div className="text-6xl mb-6 opacity-80">🛒</div>
           <h2 className="font-display font-black text-2xl text-ink mb-2">Your cart is empty</h2>
-          <p className="font-body text-ink-muted mb-8 text-center max-w-sm">
+          <p className="font-body text-ink-muted mb-8 text-center">
             Looks like you haven't added anything yet. Explore top categories to find what you need!
           </p>
-          <Button onClick={() => navigate('/')} className="w-full max-w-xs text-lg h-12">
+          <Button onClick={() => navigate('/')} className="w-full text-lg h-12 bg-primary text-white">
             Start Shopping
           </Button>
         </div>
@@ -123,7 +202,16 @@ export function CartPage() {
 
   return (
     <div className="bg-background font-body text-ink antialiased min-h-screen">
-      <div className="w-full bg-background h-full min-h-screen flex flex-col relative">
+      {/* Map Address Selector Modal */}
+      <AddressMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        onConfirm={handleLocationConfirm}
+        initialLat={customerPos.lat}
+        initialLng={customerPos.lng}
+      />
+
+      <div className="w-full bg-background min-h-screen flex flex-col relative">
         <div className="px-4 py-4 flex justify-between items-center shrink-0 border-b border-border sticky top-0 bg-background/90 backdrop-blur-md z-10">
           <div className="flex flex-col">
             <h2 className="font-display font-black text-2xl text-ink tracking-tight">Checkout</h2>
@@ -144,7 +232,7 @@ export function CartPage() {
             </div>
           )}
 
-          {/* Delivery Details Section */}
+          {/* Delivery Details & Map Option */}
           <div className="px-4 mt-4 flex flex-col gap-3">
             <div className="flex items-center justify-between bg-surface rounded-xl p-4 shadow-sm border border-ink/5">
               <div className="flex items-center gap-3">
@@ -152,23 +240,35 @@ export function CartPage() {
                   <Clock className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <span className="font-display font-bold text-sm block text-ink">Delivery in 12 mins</span>
-                  <span className="font-body text-xs text-ink-muted">To Home</span>
+                  <span className="font-display font-bold text-sm block text-ink">Delivery in 10-15 mins</span>
+                  <span className="font-body text-xs text-ink-muted">Distance: {formatDistance(distanceKm) || '1.2 km'}</span>
                 </div>
               </div>
             </div>
 
             <div className="bg-surface rounded-xl p-4 shadow-sm border border-ink/5">
-              <label className="font-body font-bold text-sm block mb-2 flex items-center gap-2">
-                <Home className="h-4 w-4" /> Delivery Address
-              </label>
-              <textarea 
+              <div className="flex items-center justify-between mb-2">
+                <label className="font-body font-bold text-sm flex items-center gap-2 text-ink">
+                  <Home className="h-4 w-4 text-primary" /> Delivery Address
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsMapModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-all"
+                >
+                  <MapPin className="w-3.5 h-3.5" /> Select on Map
+                </button>
+              </div>
+              <textarea
                 className="w-full bg-background border border-border rounded-lg p-3 font-body text-sm outline-none focus:border-primary resize-none"
-                placeholder="Enter your full delivery address"
+                placeholder="Enter or select your delivery address"
                 rows={2}
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
               />
+              <div className="mt-2 text-[11px] font-mono text-ink-muted flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-primary" /> Pin Coordinates: {customerPos.lat.toFixed(4)}, {customerPos.lng.toFixed(4)}
+              </div>
             </div>
           </div>
 
@@ -176,31 +276,41 @@ export function CartPage() {
           <div className="mt-6 px-4">
             <h3 className="font-display font-black text-lg mb-3">Items ({cartItems.length})</h3>
             <div className="bg-surface rounded-xl shadow-sm border border-ink/5 overflow-hidden">
-              {cartItems.map((item, idx) => (
-                <div key={item.product.id} className={`flex items-start gap-3 p-4 ${idx !== cartItems.length - 1 ? 'border-b border-ink/5' : ''}`}>
-                  <div className="w-16 h-16 bg-background border border-border rounded-lg flex items-center justify-center mix-blend-multiply shrink-0 p-1">
-                    <img className="w-full h-full object-contain" alt={item.product.name} src={item.product.image} />
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between h-16">
-                    <div>
-                      <h4 className="font-body text-sm font-medium text-ink line-clamp-1">{item.product.name}</h4>
-                      <span className="font-mono text-xs text-ink-muted">{item.product.size}</span>
+              {cartItems.map((item, idx) => {
+                const catName = (item.product.category || 'General');
+                const catTaxRate = categoryTaxes[catName.toLowerCase()] !== undefined ? categoryTaxes[catName.toLowerCase()] : 5.0;
+
+                return (
+                  <div key={item.product.id} className={`flex items-start gap-3 p-4 ${idx !== cartItems.length - 1 ? 'border-b border-ink/5' : ''}`}>
+                    <div className="w-16 h-16 bg-background border border-border rounded-lg flex items-center justify-center shrink-0 p-1">
+                      <img className="w-full h-full object-contain" alt={item.product.name} src={item.product.image} />
                     </div>
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-mono font-bold text-sm">₹{item.product.price?.toFixed(2) || item.product.price}</span>
-                      <div className="flex items-center border border-primary bg-primary/5 rounded-lg h-7 overflow-hidden">
-                        <button onClick={() => removeFromCart(item.product.id)} className="w-7 h-full flex items-center justify-center active:bg-primary/20 transition-colors text-primary">
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-6 text-center font-mono font-bold text-xs text-primary">{item.quantity}</span>
-                        <button onClick={() => addToCart(item.product)} className="w-7 h-full flex items-center justify-center active:bg-primary/20 transition-colors text-primary">
-                          <Plus className="h-3 w-3" />
-                        </button>
+                    <div className="flex-1 flex flex-col justify-between h-16">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-body text-sm font-medium text-ink line-clamp-1">{item.product.name}</h4>
+                          <span className="text-[10px] font-mono font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                            {catName} ({catTaxRate}%)
+                          </span>
+                        </div>
+                        <span className="font-mono text-xs text-ink-muted">{item.product.size}</span>
+                      </div>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-mono font-bold text-sm">₹{item.product.price?.toFixed(2) || item.product.price}</span>
+                        <div className="flex items-center border border-primary bg-primary/5 rounded-lg h-7 overflow-hidden">
+                          <button onClick={() => removeFromCart(item.product.id)} className="w-7 h-full flex items-center justify-center text-primary">
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-6 text-center font-mono font-bold text-xs text-primary">{item.quantity}</span>
+                          <button onClick={() => addToCart(item.product)} className="w-7 h-full flex items-center justify-center text-primary">
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -208,19 +318,49 @@ export function CartPage() {
           <div className="px-4 mt-6">
             <h3 className="font-display font-black text-lg mb-3">Tip your delivery partner</h3>
             <div className="bg-surface rounded-xl p-4 shadow-sm border border-ink/5">
-              <p className="font-body text-xs text-ink-muted mb-3">100% of the tip goes to the partner.</p>
-              <div className="flex gap-2">
+              <p className="font-body text-xs text-ink-muted mb-3">100% of the tip goes directly to your driver.</p>
+              <div className="flex gap-2 mb-3">
                 {[10, 20, 30, 50].map((amount) => (
                   <button
                     key={amount}
-                    onClick={() => setTipAmount(tipAmount === amount ? 0 : amount)}
+                    type="button"
+                    onClick={() => {
+                      setIsCustomTipActive(false);
+                      setTipAmount(tipAmount === amount && !isCustomTipActive ? 0 : amount);
+                    }}
                     className={`flex-1 py-2 rounded-lg font-mono text-xs font-bold border transition-colors ${
-                      tipAmount === amount ? 'bg-primary text-white border-primary' : 'bg-surface border-border text-ink hover:bg-ink/5'
+                      tipAmount === amount && !isCustomTipActive ? 'bg-primary text-white border-primary' : 'bg-surface border-border text-ink hover:bg-ink/5'
                     }`}
                   >
                     ₹{amount}
                   </button>
                 ))}
+              </div>
+
+              {/* Custom Tip Option */}
+              <div className="flex items-center gap-2 pt-1 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomTipActive(!isCustomTipActive)}
+                  className={`text-xs font-mono font-bold px-3 py-2 rounded-lg border transition-colors ${
+                    isCustomTipActive ? 'bg-primary text-white border-primary' : 'bg-background border-border text-ink'
+                  }`}
+                >
+                  Custom Tip
+                </button>
+                {isCustomTipActive && (
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-ink-muted font-bold">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={customTip}
+                      onChange={(e) => setCustomTip(e.target.value)}
+                      placeholder="Enter amount..."
+                      className="w-full h-9 pl-7 pr-3 bg-background border border-border rounded-lg font-mono text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -267,16 +407,16 @@ export function CartPage() {
           <div className="px-4 mt-6 mb-8">
             <div className="bg-surface rounded-xl shadow-sm border border-ink/5 p-4">
               <h3 className="font-display font-black text-lg mb-4">Bill Summary</h3>
-              
+
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="font-body text-sm text-ink-muted">Item Total</span>
                   <span className="font-mono text-sm font-bold">₹{itemTotal.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="font-body text-sm text-ink-muted flex items-center gap-1">
-                    Delivery Fee <Info className="h-3.5 w-3.5" />
+                    Delivery Fee ({formatDistance(distanceKm) || '1 km'}) <Info className="h-3.5 w-3.5" />
                   </span>
                   <div className="flex items-center gap-2">
                     {deliveryFee === 0 ? (
@@ -296,14 +436,19 @@ export function CartPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="font-body text-sm text-ink-muted">Taxes</span>
-                  <span className="font-mono text-sm">₹{taxes.toFixed(2)}</span>
+                  <span className="font-body text-sm text-ink-muted">Category Product Taxes</span>
+                  <span className="font-mono text-sm">₹{itemTaxes.toFixed(2)}</span>
                 </div>
 
-                {tipAmount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="font-body text-sm text-ink-muted">Delivery Tax (5%)</span>
+                  <span className="font-mono text-sm">₹{deliveryTax.toFixed(2)}</span>
+                </div>
+
+                {activeTip > 0 && (
                   <div className="flex justify-between items-center">
                     <span className="font-body text-sm text-ink-muted">Delivery Partner Tip</span>
-                    <span className="font-mono text-sm">₹{tipAmount.toFixed(2)}</span>
+                    <span className="font-mono text-sm">₹{activeTip.toFixed(2)}</span>
                   </div>
                 )}
               </div>
@@ -327,8 +472,8 @@ export function CartPage() {
 
         {/* Sticky Bottom Bar */}
         <div className="absolute bottom-0 w-full bg-surface border-t border-border p-4 pb-safe z-20 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-          <Button 
-            onClick={handleCheckout} 
+          <Button
+            onClick={handleCheckout}
             disabled={loading}
             className="w-full h-14 flex justify-between items-center px-6 rounded-xl text-lg font-bold bg-primary text-white hover:opacity-90 active:scale-[0.98] transition-all"
           >
@@ -355,3 +500,5 @@ export function CartPage() {
     </div>
   );
 }
+
+export default CartPage;

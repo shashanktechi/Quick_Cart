@@ -9,6 +9,7 @@ import { SystemAdminOverview } from './SystemAdminOverview';
 import { SystemAdminUsers } from './SystemAdminUsers';
 import { SystemAdminStores } from './SystemAdminStores';
 import { SystemAdminDelivery } from './SystemAdminDelivery';
+import { SystemAdminTaxSettings } from './SystemAdminTaxSettings';
 
 export function SystemAdminDashboard() {
   const { user, logout } = useAuth();
@@ -63,10 +64,10 @@ export function SystemAdminDashboard() {
             <Store className="w-4 h-4" /> Stores
           </NavLink>
           <NavLink 
-            to="/admin-dashboard/financials"
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${getTabClass('financials')}`}
+            to="/admin-dashboard/taxes"
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${getTabClass('taxes')}`}
           >
-            <DollarSign className="w-4 h-4" /> Financials
+            <DollarSign className="w-4 h-4" /> Taxes & Delivery
           </NavLink>
           <NavLink 
             to="/admin-dashboard/users"
@@ -88,7 +89,7 @@ export function SystemAdminDashboard() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<SystemAdminOverview />} />
             <Route path="stores" element={<SystemAdminStores />} />
-            <Route path="financials" element={<div className="text-center py-12 text-ink-muted">Financials Coming Soon</div>} />
+            <Route path="taxes" element={<SystemAdminTaxSettings />} />
             <Route path="users" element={<SystemAdminUsers />} />
             <Route path="delivery" element={<SystemAdminDelivery />} />
           </Routes>

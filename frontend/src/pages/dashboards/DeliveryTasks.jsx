@@ -6,12 +6,15 @@ import { Badge } from '../../components/ui/Badge';
 import { api } from '../../services/api';
 import { ImageUploader } from '../../components/ui/ImageUploader';
 
+import { DeliveryMapModal } from '../../components/ui/DeliveryMapModal';
+
 export function DeliveryTasks({ tasks, onTaskUpdate }) {
   const hasActiveTasks = tasks?.orders?.length > 0;
   const [updating, setUpdating] = useState(null);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [loadingPending, setLoadingPending] = useState(true);
   const [accepting, setAccepting] = useState(null);
+  const [selectedMapOrder, setSelectedMapOrder] = useState(null);
 
   // Fetch orders waiting for a delivery partner
   useEffect(() => {
@@ -177,16 +180,24 @@ export function DeliveryTasks({ tasks, onTaskUpdate }) {
                     </span>
                   </div>
 
-                  {/* Delivery Address – prominently displayed */}
-                  <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 mb-2">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">Delivery Address</p>
-                        <p className="text-sm font-medium text-ink leading-snug">
-                          {order.deliveryAddress || 'Address not provided'}
-                        </p>
+                  {/* Delivery Address – prominently displayed & clickable to view map */}
+                  <div 
+                    onClick={() => setSelectedMapOrder(order)}
+                    className="bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer rounded-xl p-3 border border-primary/30 mb-2 group relative"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0 group-hover:scale-110 transition-transform" />
+                        <div>
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">Delivery Address (Click to Open Map)</p>
+                          <p className="text-sm font-bold text-ink leading-snug">
+                            {order.deliveryAddress || 'Address not provided'}
+                          </p>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-mono font-bold bg-primary text-white px-2 py-1 rounded-md shadow-xs shrink-0">
+                        🗺️ View Map
+                      </span>
                     </div>
                   </div>
 
@@ -244,6 +255,13 @@ export function DeliveryTasks({ tasks, onTaskUpdate }) {
           </div>
         )}
       </section>
+
+      {/* Delivery Map Modal for Driver */}
+      <DeliveryMapModal
+        isOpen={!!selectedMapOrder}
+        onClose={() => setSelectedMapOrder(null)}
+        order={selectedMapOrder}
+      />
     </div>
   );
 }

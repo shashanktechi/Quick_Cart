@@ -1,9 +1,11 @@
 package com.quickcart.controller;
 
+import com.quickcart.config.CurrentUserProvider;
 import com.quickcart.service.RazorpayService;
 import com.quickcart.entity.Order;
 import com.quickcart.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +25,19 @@ public class PaymentController {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private CurrentUserProvider currentUserProvider;
+
     @PostMapping("/create-razorpay-order")
     public ResponseEntity<?> createRazorpayOrder(@RequestBody Map<String, Object> data) {
         try {
             Long orderId = Long.parseLong(data.get("orderId").toString());
             Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+
+            if (order.getCustomer() == null || !order.getCustomer().getId().equals(currentUserProvider.getCurrentUserId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Forbidden: You do not own this order.");
+            }
 
             com.razorpay.Order razorpayOrder = razorpayService.createOrder(
                 order.getTotalAmount(), 
@@ -53,10 +62,18 @@ public class PaymentController {
         String signature = data.get("razorpaySignature");
         Long orderId = Long.parseLong(data.get("orderId"));
 
-        boolean isValid = razorpayService.verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, signature);
-        
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getCustomer() == null || !order.getCustomer().getId().equals(currentUserProvider.getCurrentUserId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Forbidden: You do not own this order.");
+        }
+
+        if (order.getRazorpayOrderId() == null || !order.getRazorpayOrderId().equals(razorpayOrderId)) {
+            return ResponseEntity.badRequest().body("Payment does not match this order");
+        }
+
+        boolean isValid = razorpayService.verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, signature);
 
         if (isValid) {
             order.setPaymentStatus("PAID");

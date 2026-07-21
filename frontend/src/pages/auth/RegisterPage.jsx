@@ -12,7 +12,7 @@ import { getUserLocation } from '../../utils/geo';
 export function RegisterPage() {
   const [formData, setFormData] = useState({ 
     name: '', username: '', email: '', phone: '', password: '', role: 'CUSTOMER',
-    storeName: '', city: '', storeAddress: '', otp: '', vehicleType: 'Bike', vehicleNumber: '', vehicleName: '', vehicleModel: '', storeLat: '', storeLng: ''
+    storeName: '', city: '', storeAddress: '', storeType: 'STORE', otp: '', vehicleType: 'Bike', vehicleNumber: '', vehicleName: '', vehicleModel: '', storeLat: '', storeLng: ''
   });
   const [step, setStep] = useState(1); // 1: details, 2: otp
   const [error, setError] = useState('');
@@ -212,17 +212,40 @@ export function RegisterPage() {
                       <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-ink-muted">Additional Details</h3>
                       
                       {formData.role === 'STORE_ADMIN' && (
-                        <div className="relative">
-                          <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink/40" />
-                          <Input
-                            name="storeName"
-                            placeholder="Store Name"
-                            value={formData.storeName}
-                            onChange={handleChange}
-                            required
-                            className="pl-10 h-12 border-border focus:border-bazaar-green"
-                          />
-                        </div>
+                        <>
+                          <div className="relative">
+                            <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-ink/40" />
+                            <Input
+                              name="storeName"
+                              placeholder="Store Name"
+                              value={formData.storeName}
+                              onChange={handleChange}
+                              required
+                              className="pl-10 h-12 border-border focus:border-bazaar-green"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-muted">Store Category / Type</label>
+                            <div className="relative">
+                              <select 
+                                name="storeType" 
+                                value={formData.storeType} 
+                                onChange={handleChange}
+                                required
+                                className="w-full h-12 bg-transparent border border-border rounded-lg px-4 font-body focus:border-bazaar-green focus:ring-1 focus:ring-bazaar-green outline-none transition-colors appearance-none"
+                              >
+                                <option value="MANDI">Mandi (Bulk Produce / Market)</option>
+                                <option value="STORE">Store (Regular Retail)</option>
+                                <option value="WHOLESALE">Wholesale Market</option>
+                                <option value="SMALL_STORE">Small Town Store</option>
+                              </select>
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-ink/40">
+                                ▼
+                              </div>
+                            </div>
+                          </div>
+                        </>
                       )}
 
                       <div className="relative">

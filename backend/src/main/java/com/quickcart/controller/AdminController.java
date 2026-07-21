@@ -37,6 +37,9 @@ public class AdminController {
     @Autowired
     private com.quickcart.service.EmailService emailService;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userRepository.findAll());
@@ -211,22 +214,58 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    @DeleteMapping("/dev/reset-stores")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<?> resetAllStores() {
-        org.springframework.jdbc.core.JdbcTemplate jdbcTemplate = org.springframework.web.context.support.WebApplicationContextUtils
-                .getRequiredWebApplicationContext(((org.springframework.web.context.request.ServletRequestAttributes) 
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getRequest().getServletContext())
-                .getBean(org.springframework.jdbc.core.JdbcTemplate.class);
-        
-        jdbcTemplate.execute("TRUNCATE TABLE audit_logs CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE inventory CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE order_items CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE orders CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE products CASCADE");
-        jdbcTemplate.execute("TRUNCATE TABLE stores CASCADE");
-        jdbcTemplate.execute("DELETE FROM users WHERE role = 'STORE_ADMIN'");
-        
-        return ResponseEntity.ok(Map.of("message", "All stores and related data wiped completely via TRUNCATE."));
+    @Autowired
+    private com.quickcart.repository.CategoryTaxRepository categoryTaxRepository;
+
+    @GetMapping("/category-taxes")
+    public ResponseEntity<?> getCategoryTaxes() {
+        try {
+            return ResponseEntity.ok(categoryTaxRepository.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+    }
+
+    @PutMapping("/category-taxes")
+    public ResponseEntity<?> updateCategoryTaxes(@RequestBody java.util.List<java.util.Map<String, Object>> taxes) {
+        try {
+            // Ensure table exists safely
+            jdbcTemplate.execute(
+                "CREATE TABLE IF NOT EXISTS category_taxes (" +
+                "id BIGSERIAL PRIMARY KEY, " +
+                "category_name VARCHAR(100) UNIQUE NOT NULL, " +
+                "tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0.00, " +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+            );
+
+            for (java.util.Map<String, Object> taxMap : taxes) {
+                Object nameObj = taxMap.get("categoryName");
+                Object rateObj = taxMap.get("taxPercentage");
+                if (nameObj != null) {
+                    String catName = nameObj.toString();
+                    java.math.BigDecimal rate = java.math.BigDecimal.ZERO;
+                    if (rateObj != null) {
+                        try {
+                            rate = new java.math.BigDecimal(rateObj.toString());
+                        } catch (Exception ignored) {}
+                    }
+
+                    com.quickcart.entity.CategoryTax existing = categoryTaxRepository
+                            .findByCategoryNameIgnoreCase(catName)
+                            .orElseGet(() -> {
+                                com.quickcart.entity.CategoryTax newTax = new com.quickcart.entity.CategoryTax();
+                                newTax.setCategoryName(catName);
+                                return newTax;
+                            });
+                    existing.setTaxPercentage(rate);
+                    categoryTaxRepository.save(existing);
+                }
+            }
+            return ResponseEntity.ok(java.util.Map.of("success", true, "message", "Category taxes updated successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 }
+

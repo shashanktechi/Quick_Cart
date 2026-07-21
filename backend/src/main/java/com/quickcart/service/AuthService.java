@@ -24,7 +24,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 @Transactional
@@ -53,6 +52,9 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private org.springframework.core.env.Environment environment;
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     // OTP validity in minutes
@@ -76,7 +78,9 @@ public class AuthService {
         }
         String emailClean = email.trim().toLowerCase();
         String otp = generateAndSaveOtp(emailClean);
-        log.info("==== GENERATED OTP FOR {}: {} ====", emailClean, otp);
+        if (environment != null && environment.matchesProfiles("dev", "local")) {
+            log.info("==== GENERATED OTP FOR {}: {} ====", emailClean, otp);
+        }
 
         try {
             emailService.sendOtpEmail(emailClean, otp);
@@ -103,7 +107,7 @@ public class AuthService {
             throw new RuntimeException("OTP send limit exceeded. Please try again later.");
         }
 
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
         String otpHash = passwordEncoder.encode(otp);
 
         Instant now = Instant.now();
@@ -255,7 +259,7 @@ public class AuthService {
             otpRequest.setAttemptCount(otpRequest.getAttemptCount() + 1);
             otpRequestRepository.save(otpRequest);
 
-            if (!passwordEncoder.matches(request.getOtp(), otpRequest.getOtpHash())) {
+            if (!passwordEncoder.matches(request.getOtp().trim(), otpRequest.getOtpHash())) {
                 throw new RuntimeException("Invalid OTP");
             }
 
@@ -348,7 +352,7 @@ public class AuthService {
         otpRequest.setAttemptCount(otpRequest.getAttemptCount() + 1);
         otpRequestRepository.save(otpRequest);
 
-        if (!passwordEncoder.matches(request.getOtp(), otpRequest.getOtpHash())) {
+        if (!passwordEncoder.matches(request.getOtp().trim(), otpRequest.getOtpHash())) {
             throw new RuntimeException("Invalid OTP");
         }
 
@@ -383,7 +387,7 @@ public class AuthService {
         }
 
         if ("STORE_ADMIN".equals(role) || "DELIVERY_PARTNER".equals(role)) {
-            user.setVerificationStatus("APPROVED"); // Auto-approve for dev convenience
+            user.setVerificationStatus("PENDING");
         } else {
             user.setVerificationStatus("APPROVED");
         }
@@ -415,7 +419,17 @@ public class AuthService {
             } catch (Exception e) {
                 throw new RuntimeException("Error creating location point: " + e.getMessage());
             }
-            store.setVerificationStatus("APPROVED"); // Auto-approve for dev convenience
+            store.setVerificationStatus("PENDING");
+            String storeType = request.getStoreType();
+            if (storeType == null || storeType.trim().isEmpty()) {
+                storeType = "STORE";
+            } else {
+                storeType = storeType.trim().toUpperCase();
+                if (!java.util.Set.of("MANDI", "STORE", "WHOLESALE", "SMALL_STORE").contains(storeType)) {
+                    throw new RuntimeException("Invalid storeType: " + storeType + ". Must be MANDI, STORE, WHOLESALE, or SMALL_STORE");
+                }
+            }
+            store.setStoreType(storeType);
             store = storeRepository.save(store);
             storeId = store.getId();
         }

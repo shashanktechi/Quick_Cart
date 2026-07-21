@@ -3,6 +3,7 @@ import { Outlet } from 'react-router';
 import { TopAppBar } from './TopAppBar';
 import { BottomNavBar } from './BottomNavBar';
 import { ConflictModal } from '../ui/ConflictModal';
+import { AiAssistantWidget } from '../ui/AiAssistantWidget';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router';
@@ -29,6 +30,7 @@ export function MainLayout() {
         <Outlet />
       </main>
       <BottomNavBar />
+      <AiAssistantWidget />
     </div>
   );
 }

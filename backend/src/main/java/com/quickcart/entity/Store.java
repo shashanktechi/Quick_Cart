@@ -54,6 +54,9 @@ public class Store {
     @Column(name = "logo_url")
     private String logoUrl;
 
+    @Column(name = "store_type", length = 20)
+    private String storeType = "STORE"; // MANDI, STORE, WHOLESALE, SMALL_STORE
+
     @Column(name = "banner_url")
     private String bannerUrl;
 }

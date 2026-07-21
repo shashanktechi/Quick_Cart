@@ -41,6 +41,11 @@ public class CustomerController {
     @Autowired
     private CurrentUserProvider currentUserProvider;
 
+    @Autowired
+    private com.quickcart.service.AiProviderRouter aiProviderRouter;
+
+    private final java.util.concurrent.ConcurrentHashMap<Long, Long> userAssistantCooldown = new java.util.concurrent.ConcurrentHashMap<>();
+
     @GetMapping("/stores/nearby")
     public ResponseEntity<?> getNearbyStores(@RequestParam double lat, @RequestParam double lng,
                                               @RequestParam(defaultValue = "20") int limit) {
@@ -119,5 +124,29 @@ public class CustomerController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/assistant/ask")
+    public ResponseEntity<?> askAssistant(@RequestBody Map<String, String> body) {
+        Long customerId = currentUserProvider.getCurrentUserId();
+        if (customerId == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        long now = System.currentTimeMillis();
+        Long lastRequestTime = userAssistantCooldown.get(customerId);
+        if (lastRequestTime != null && (now - lastRequestTime) < 3000) {
+            return ResponseEntity.status(429).body(Map.of("error", "Please wait a moment before sending another message."));
+        }
+        userAssistantCooldown.put(customerId, now);
+
+        String message = body.get("message");
+        if (message == null || message.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Message is required"));
+        }
+
+        String prompt = "You are a helpful assistant for a hyperlocal grocery app called QuickCart. Answer briefly. User: " + message.trim();
+        String reply = aiProviderRouter.queryAi(prompt);
+        return ResponseEntity.ok(Map.of("reply", reply));
     }
 }

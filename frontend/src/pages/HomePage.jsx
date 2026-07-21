@@ -180,6 +180,14 @@ export function HomePage() {
   // Stores that have lat/lng to show on the map
   const mapStores = nearbyStores.length > 0 ? nearbyStores : [];
 
+  const mandiStores = useMemo(() => {
+    return filteredStores.filter(s => s.rawStore?.storeType === 'MANDI');
+  }, [filteredStores]);
+
+  const regularStores = useMemo(() => {
+    return mandiStores.length > 0 ? filteredStores.filter(s => s.rawStore?.storeType !== 'MANDI') : filteredStores;
+  }, [filteredStores, mandiStores]);
+
   return (
     <div className="flex flex-col gap-6 pt-4 pb-12">
       <ConflictModal {...conflictState} />
@@ -290,6 +298,25 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* Mandi — Buy in Bulk Section */}
+      {mandiStores.length > 0 && (
+        <section className="px-4 md:px-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-xl text-ink tracking-tight flex items-center gap-2">
+              🌾 Mandi — Buy in Bulk
+              <span className="text-xs bg-emerald-100 text-emerald-800 font-mono px-2 py-0.5 rounded-full font-bold">Direct Wholesale</span>
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-4 w-full">
+            {mandiStores.map((store) => (
+              <div key={store.id} className="w-full sm:w-[320px]">
+                <StoreCard {...store} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Nearby Stores */}
       <section className="px-4 md:px-0">
         <div className="flex items-center justify-between mb-4">
@@ -310,7 +337,7 @@ export function HomePage() {
               <div key={i} className="w-full sm:w-[320px] h-48 bg-surface border border-border rounded-2xl animate-pulse" />
             ))}
           </div>
-        ) : filteredStores.length === 0 ? (
+        ) : regularStores.length === 0 && mandiStores.length === 0 ? (
           <div className="bg-surface border border-border shadow-sm rounded-2xl p-8 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner">
               🏪
@@ -330,7 +357,7 @@ export function HomePage() {
           </div>
         ) : (
           <div className="flex flex-wrap gap-4 w-full">
-            {filteredStores.map((store) => (
+            {regularStores.map((store) => (
               <div key={store.id} className="w-full sm:w-[320px]">
                 <StoreCard {...store} />
               </div>

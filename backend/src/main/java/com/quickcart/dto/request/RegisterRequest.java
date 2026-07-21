@@ -34,6 +34,7 @@ public class RegisterRequest {
     private String storeAddress;
     private Double storeLat;
     private Double storeLng;
+    private String storeType;
     private String otp;
     private String vehicleType;
     private String vehicleName;

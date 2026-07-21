@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, Phone, MapPin, CheckCircle2, Clock, Package, Loader2, Navigation, MessageCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { Button } from '../components/ui/Button';
+import { DeliveryTrackingMap } from '../components/ui/DeliveryTrackingMap';
 
 export function TrackOrderPage() {
   const navigate = useNavigate();
@@ -66,28 +67,23 @@ export function TrackOrderPage() {
   return (
     <div className="bg-background font-body text-ink antialiased min-h-screen">
       <div className="w-full bg-surface min-h-screen flex flex-col relative">
-        {/* Header (Overlaid on map) */}
-        <button onClick={() => navigate('/')} className="absolute top-4 left-4 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md text-ink hover:bg-white active:scale-95 transition-all">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {/* Prominent Neat Top Header */}
+        <div className="w-full bg-surface/90 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+          <button 
+            onClick={() => navigate('/stores')} 
+            className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/20 px-3.5 py-2 rounded-xl transition-all active:scale-95"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+          </button>
+
+          <span className="font-display font-black text-base text-ink">
+            Tracking Order #{order.id}
+          </span>
+        </div>
 
         {/* Map Area */}
-        <div className="w-full h-[40vh] bg-surface relative flex items-center justify-center overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('https://maps.googleapis.com/maps/api/staticmap?center=${order.customerLat || 0},${order.customerLng || 0}&zoom=15&size=600x600&maptype=roadmap&style=feature:all|element:labels.text.fill|color:0x333333&style=feature:water|element:geometry|color:0x006c4a&sensor=false')` }}
-          ></div>
-          
-          {/* Faded overlay for better text contrast at top */}
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/20 to-transparent"></div>
-
-          {/* Delivery Marker */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary flex flex-col items-center drop-shadow-lg">
-            <div className="bg-primary text-white p-2 rounded-full shadow-lg border-2 border-white animate-pulse">
-              <Navigation className="h-5 w-5 fill-white" />
-            </div>
-            <div className="w-6 h-1.5 bg-black/30 rounded-[100%] mt-2 blur-[1px]"></div>
-          </div>
+        <div className="w-full h-[40vh] bg-surface relative flex items-center justify-center overflow-hidden z-0">
+          <DeliveryTrackingMap order={order} height="100%" />
         </div>
 
         {/* Content Sheet */}
@@ -105,8 +101,8 @@ export function TrackOrderPage() {
                  order.status === 'OUT_FOR_DELIVERY' ? 'Partner is on the way!' : 'Order delivered!'}
               </span>
             </div>
-            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center">
-              <Clock className="h-8 w-8" />
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center animate-[pulse_1s_ease-in-out_infinite]">
+              <Clock className="h-8 w-8 animate-spin" style={{ animationDuration: '3s' }} />
             </div>
           </div>
 

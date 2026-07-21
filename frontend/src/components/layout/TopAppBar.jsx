@@ -42,11 +42,11 @@ export function TopAppBar() {
           </div>
         </div>
         
-        {/* Desktop-only Account/Cart icons */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Account/Cart icons */}
+        <div className="flex items-center gap-3 md:gap-4">
           <button 
             onClick={() => navigate('/cart')}
-            className="relative p-2 text-ink hover:bg-ink/5 transition-colors active:scale-95 duration-200 rounded-full"
+            className="relative p-2 text-ink hover:bg-ink/5 transition-colors active:scale-95 duration-200 rounded-full font-body"
           >
             <ShoppingCart className="h-6 w-6" />
             {cartCount > 0 && (

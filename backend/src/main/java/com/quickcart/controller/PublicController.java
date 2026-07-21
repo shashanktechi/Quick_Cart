@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -26,6 +27,39 @@ public class PublicController {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private com.quickcart.repository.CategoryTaxRepository categoryTaxRepository;
+
+    @GetMapping("/category-taxes")
+    public ResponseEntity<?> getPublicCategoryTaxes() {
+        try {
+            jdbcTemplate.execute(
+                "CREATE TABLE IF NOT EXISTS category_taxes (" +
+                "id BIGSERIAL PRIMARY KEY, " +
+                "category_name VARCHAR(100) UNIQUE NOT NULL, " +
+                "tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0.00, " +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+            );
+            jdbcTemplate.execute(
+                "INSERT INTO category_taxes (category_name, tax_percentage) VALUES " +
+                "('Vegetables', 0.00), ('Fruits', 0.00), ('Dairy', 5.00), ('Non-Veg', 5.00), " +
+                "('Snacks', 12.00), ('Beverages', 18.00), ('Household', 18.00) " +
+                "ON CONFLICT (category_name) DO NOTHING"
+            );
+            return ResponseEntity.ok(categoryTaxRepository.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.ok(java.util.List.of(
+                Map.of("categoryName", "Vegetables", "taxPercentage", 0.0),
+                Map.of("categoryName", "Fruits", "taxPercentage", 0.0),
+                Map.of("categoryName", "Dairy", "taxPercentage", 5.0),
+                Map.of("categoryName", "Non-Veg", "taxPercentage", 5.0),
+                Map.of("categoryName", "Snacks", "taxPercentage", 12.0),
+                Map.of("categoryName", "Beverages", "taxPercentage", 18.0),
+                Map.of("categoryName", "Household", "taxPercentage", 18.0)
+            ));
+        }
+    }
 
     @GetMapping("/fix-stores")
     public ResponseEntity<?> fixStores() {

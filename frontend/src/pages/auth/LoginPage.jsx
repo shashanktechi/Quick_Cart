@@ -27,7 +27,14 @@ export function LoginPage() {
       await login(payload);
       navigate('/');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Invalid email or password. Please try again.';
+      let errorMessage = err.response?.data?.error || err.response?.data?.message;
+      if (!errorMessage) {
+        if (err.response?.status === 502 || err.message?.includes('502')) {
+          errorMessage = 'Backend server is initializing. Please wait a few seconds and click Sign In again.';
+        } else {
+          errorMessage = err.message || 'Invalid email or password. Please try again.';
+        }
+      }
       setError(errorMessage);
     } finally {
       setLoading(false);

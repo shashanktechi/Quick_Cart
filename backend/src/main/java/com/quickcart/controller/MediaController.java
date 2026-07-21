@@ -41,6 +41,9 @@ public class MediaController {
     private OrderRepository orderRepository;
 
     @Autowired
+    private com.quickcart.repository.InventoryRepository inventoryRepository;
+
+    @Autowired
     private CurrentUserProvider currentUserProvider;
 
     private String getExtensionAndValidate(String contentType) {
@@ -142,6 +145,11 @@ public class MediaController {
         }
         Product product = productRepository.findById(Objects.requireNonNull(productId))
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (!inventoryRepository.existsByStoreIdAndProductId(storeId, productId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "This product is not in your store's inventory."));
+        }
+
         try {
             String url = cloudinaryService.uploadFile(file, "stores/" + storeId + "/products/" + productId);
             product.setImageUrl(url);
