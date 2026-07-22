@@ -58,7 +58,7 @@ export function LandingPage() {
         {/* Left Column: 3D Sphere */}
         <div className="w-full lg:w-1/2 bg-surface border-b lg:border-b-0 lg:border-r border-border flex items-center justify-center relative py-12 lg:py-0 overflow-hidden">
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l10 10M10 0l10 10M0 10l10 10M10 10l10 10M0 20l10-10M10 20l10-10' stroke='%231F2A24' stroke-width='0.5' fill='none'/%3E%3C/svg%3E\")" }}></div>
-          <TagSphere />
+          <HeroSphere3D />
         </div>
 
         {/* Right Column: Hero Content */}

@@ -7,6 +7,7 @@ import { api } from '../services/api';
 import { Button } from '../components/ui/Button';
 import { getUserLocation, haversineDistance, formatDistance } from '../utils/geo';
 import { AddressMapModal } from '../components/ui/AddressMapModal';
+import { SuccessAnimation3D } from '../components/ui/SuccessAnimation3D';
 
 export function CartPage() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export function CartPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showSuccessAnim, setShowSuccessAnim] = useState(false);
+  const [successOrderId, setSuccessOrderId] = useState(null);
 
   // Delivery & Location States
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || '');
@@ -157,7 +160,8 @@ export function CartPage() {
               orderId: orderId.toString()
             });
             clearCart();
-            navigate('/track', { state: { orderId } });
+            setSuccessOrderId(orderId);
+            setShowSuccessAnim(true);
           },
           prefill: {
             name: user?.name || "Customer",
@@ -174,7 +178,8 @@ export function CartPage() {
         rzp.open();
       } else {
         clearCart();
-        navigate('/track', { state: { orderId } });
+        setSuccessOrderId(orderId);
+        setShowSuccessAnim(true);
       }
     } catch (err) {
       console.error('Checkout failed', err);
@@ -202,6 +207,13 @@ export function CartPage() {
 
   return (
     <div className="bg-background font-body text-ink antialiased min-h-screen">
+      {showSuccessAnim && (
+        <SuccessAnimation3D 
+          onComplete={() => {
+            navigate('/track', { state: { orderId: successOrderId } });
+          }} 
+        />
+      )}
       {/* Map Address Selector Modal */}
       <AddressMapModal
         isOpen={isMapModalOpen}

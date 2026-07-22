@@ -5,8 +5,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { BrandStamp } from '../../components/ui/BrandStamp';
+import { HeroSphere3D } from '../../components/ui/HeroSphere3D';
 import { BrandMark } from '../../components/ui/BrandMark';
-import { TagSphere } from '../../components/ui/TagSphere';
 
 export function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -54,7 +54,7 @@ export function LoginPage() {
       {/* Left Column: 3D Sphere */}
       <div className="hidden lg:flex lg:w-1/2 bg-surface border-r border-border flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l10 10M10 0l10 10M0 10l10 10M10 10l10 10M0 20l10-10M10 20l10-10' stroke='%231F2A24' stroke-width='0.5' fill='none'/%3E%3C/svg%3E\")" }}></div>
-        <TagSphere />
+        <HeroSphere3D />
       </div>
 
       {/* Right Column: Form */}

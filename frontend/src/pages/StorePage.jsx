@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { BrandMark } from '../components/ui/BrandMark';
 import { ProductCard } from '../components/ui/ProductCard';
+import { ProductCard3D } from '../components/ui/ProductCard3D';
 import { ConflictModal } from '../components/ui/ConflictModal';
 
 export function StorePage() {
@@ -128,16 +129,49 @@ export function StorePage() {
 
         <section className="p-4 md:p-0 md:py-6">
           <h2 className="font-display font-black text-2xl text-ink tracking-tight mb-4">{activeCategory}</h2>
+          
+          {/* Featured 3D Products (Top 4) */}
+          {filteredProducts.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-bold text-lg text-ink flex items-center gap-2">
+                  <Star className="w-5 h-5 text-warning fill-warning" /> 
+                  Featured Deals
+                </h3>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x">
+                {filteredProducts.slice(0, 4).map(p => (
+                  <div key={p.id} className="snap-start">
+                    <ProductCard3D 
+                      id={p.id}
+                      name={p.name}
+                      size={p.size}
+                      price={p.price}
+                      mrp={p.price * 1.2}
+                      discountPercent={15}
+                      image={p.image}
+                      storeId={storeDetails?.id}
+                      storeName={storeDetails?.name}
+                      isOutOfStock={p.stock === 0}
+                      onConflict={handleConflict}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Standard 2D Products Grid */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            {filteredProducts.map(p => (
+            {filteredProducts.slice(4).map(p => (
               <ProductCard 
                 key={p.id}
                 id={p.id}
                 name={p.name}
                 size={p.size}
                 price={p.price}
-                mrp={p.price * 1.2} // Dummy MRP for demonstration
-                discountPercent={15} // Dummy discount for demonstration
+                mrp={p.price * 1.2}
+                discountPercent={15}
                 image={p.image}
                 storeId={storeDetails?.id}
                 storeName={storeDetails?.name}
