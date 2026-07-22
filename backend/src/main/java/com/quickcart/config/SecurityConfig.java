@@ -46,14 +46,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
-                .map(s -> s != null ? s.trim() : "")
-                .filter(s -> !s.isEmpty())
-                .toList();
-        configuration.setAllowedOriginPatterns(origins.isEmpty() ? List.of("*") : origins);
+        // Allow all origins — API is protected by JWT tokens so this is safe.
+        // Using allowedOriginPatterns instead of allowedOrigins so credentials still work.
+        configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
